@@ -11,15 +11,15 @@ export class FandomWiki extends Wiki {
 		this.network = network;
 	}
 
-	public async callNirvana( params : Record<string, string> & { controller : string, method? : string } ) : Promise<NirvanaResult> {
+	public async callNirvana<T extends NirvanaResult = NirvanaResult>( params : Record<string, string> & { controller : string, method? : string } ) : Promise<T> {
 		params.format = 'json';
 		return await ( await this.fetchManager.queue( this.entrypoint.substring( 0, this.entrypoint.length - 'api.php'.length ) + 'wikia.php?' + ( new URLSearchParams( params ) ).toString() ) ).json();
 	}
 
 	public async getMercuryWikiVariables() : Promise<MercuryWikiVariables> {
-		return ( await this.callNirvana( {
+		return ( await this.callNirvana<MercuryWikiVariablesResult>( {
 			controller: 'MercuryApiController',
 			method: 'getWikiVariables'
-		} ) as MercuryWikiVariablesResult ).data;
+		} ) ).data;
 	}
 };

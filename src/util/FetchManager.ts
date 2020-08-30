@@ -3,11 +3,18 @@ import fetch, { Response, RequestInit } from 'node-fetch';
 export type FetchLike = ( url: string, init?: RequestInit ) => Promise<Response>;
 
 export interface FetchManagerOptions {
+	fetch? : FetchLike;
+	maxRequests? : number;
+	waitTime? : number;
+	verbose? : number;
+	name? : string;
+};
+
+export interface FetchManagerOptionsRequired extends FetchManagerOptions {
 	fetch : FetchLike;
 	maxRequests : number;
 	waitTime : number;
 	verbose : number;
-	name? : string;
 };
 
 interface QueuedRequest {
@@ -16,12 +23,12 @@ interface QueuedRequest {
 	resolve : ( result : Response ) => void
 };
 
-export class FetchManager implements FetchManagerOptions {
+export class FetchManager implements FetchManagerOptionsRequired {
 	public static readonly VERBOSE_NONE  = 0;
 	public static readonly VERBOSE_INFO  = 1;
 	public static readonly VERBOSE_DEBUG = 2;
 
-	public static defaults : FetchManagerOptions = {
+	public static defaults : FetchManagerOptionsRequired = {
 		fetch: fetch,
 		maxRequests: 1,
 		waitTime: 0,

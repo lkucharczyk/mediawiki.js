@@ -38,5 +38,53 @@ export interface MercuryWikiVariables {
 };
 
 export interface MercuryWikiVariablesResult extends NirvanaResult {
-	data : MercuryWikiVariables
+	data : MercuryWikiVariables;
+};
+
+export interface UserDetails {
+	user_id : number;
+	title : string;
+	name : string;
+	url : string;
+	numberofedits : number;
+	avatar : string;
+};
+
+export interface UserDetailsResult extends NirvanaResult {
+	basepath : string;
+	items : UserDetails[];
+};
+
+export interface WikiDetails {
+	id : number;
+	wordmark : string;
+	title : string;
+	stats : {
+		edits : number;
+		articles : number;
+		pages : number;
+		users : number;
+		activeUsers : number;
+		images : number;
+		videos : number;
+		admins : number;
+		discussions? : number;
+	},
+	topUsers : number[];
+	founding_user_id : string;
+	creation_date : string;
+	headline : string|null;
+	name : string;
+	domain : string;
+	hub : string;
+	lang : string;
+	topic : string|null;
+	desc : string;
+	image : string;
+};
+
+export interface WikiDetailsResult extends NirvanaResult {
+	items : {
+		[ id : number ] : WikiDetails;
+	};
 };

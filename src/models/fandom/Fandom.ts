@@ -1,5 +1,11 @@
 import { FandomWiki } from './FandomWiki';
 import { FetchManager, FetchManagerOptions } from '../../util/FetchManager';
+import {
+	UserDetails,
+	UserDetailsResult,
+	WikiDetails,
+	WikiDetailsResult
+} from '../../interfaces/Fandom';
 import { WikiNetwork } from '../WikiNetwork';
 
 export class Fandom extends WikiNetwork {
@@ -7,14 +13,17 @@ export class Fandom extends WikiNetwork {
 	public static readonly REGEXP_LANG = /^[a-z]{2}(?:-[a-z]{2,})?$/
 	public static readonly REGEXP_WIKI = /^(?:([a-z]{2}(?:-[a-z]{2,})?)\.)?([a-z0-9-_]+)$/
 
+	central : FandomWiki;
+
 	public constructor( fetchManager? : FetchManager|FetchManagerOptions ) {
 		super( 'Fandom', fetchManager );
+		this.central = this.getWiki( 'community' );
 	}
 
 	public getWiki( wiki : string ) : FandomWiki {
 		let url;
 		try {
-			url = new URL( !wiki.startsWith( 'https://' ) ? `https://${wiki}` : wiki );
+			url = new URL( !wiki.startsWith( 'http://' ) && !wiki.startsWith( 'https://' ) ? `https://${wiki}` : wiki );
 		} catch {}
 
 		if ( url && Fandom.REGEXP_DOMAIN.test( url.hostname ) ) {
@@ -34,5 +43,29 @@ export class Fandom extends WikiNetwork {
 		}
 
 		throw new Error( 'Specified wiki is not on the Fandom network.' );
+	}
+
+	public async getUserDetails( ids : number|number[] ) : Promise<UserDetails[]> {
+		if ( !Array.isArray( ids ) ) {
+			ids = [ ids ];
+		}
+
+		return ( await this.central.callNirvana<UserDetailsResult>( {
+			controller: 'UserApiController',
+			method: 'GetDetails',
+			ids: ids.join( ',' )
+		} ) ).items;
+	}
+
+	public async getWikiDetails( ids : number|number[] ) : Promise<{ [ id : number ] : WikiDetails }> {
+		if ( !Array.isArray( ids ) ) {
+			ids = [ ids ];
+		}
+
+		return ( await this.central.callNirvana<WikiDetailsResult>( {
+			controller: 'WikisApiController',
+			method: 'GetDetails',
+			ids: ids.join( ',' )
+		} ) ).items;
 	}
 };
