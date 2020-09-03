@@ -1,6 +1,7 @@
 import { Fandom } from './Fandom';
 import { FetchManager, FetchManagerOptions } from '../../util/util';
 import { MercuryWikiVariables, MercuryWikiVariablesResult, NirvanaResult } from '../../interfaces/Fandom';
+import { RequestInit } from 'node-fetch';
 import { Wiki } from '../Wiki';
 
 export class FandomWiki extends Wiki {
@@ -11,9 +12,9 @@ export class FandomWiki extends Wiki {
 		this.network = network;
 	}
 
-	public async callNirvana<T extends NirvanaResult = NirvanaResult>( params : Record<string, string> & { controller : string, method? : string } ) : Promise<T> {
+	public async callNirvana<T extends NirvanaResult = NirvanaResult>( params : Record<string, string> & { controller : string, method? : string }, options? : RequestInit ) : Promise<T> {
 		params.format = 'json';
-		return await ( await this.fetchManager.queue( this.entrypoint.substring( 0, this.entrypoint.length - 'api.php'.length ) + 'wikia.php?' + ( new URLSearchParams( params ) ).toString() ) ).json();
+		return ( await this.call( 'wikia.php', params, options ) ).json();
 	}
 
 	public async getMercuryWikiVariables() : Promise<MercuryWikiVariables> {

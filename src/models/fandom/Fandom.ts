@@ -34,12 +34,12 @@ export class Fandom extends WikiNetwork {
 				entrypoint += `/${path[1]}`;
 			}
 
-			return new FandomWiki( this, `${entrypoint}/api.php`, this.fetchManager );
+			return new FandomWiki( this, entrypoint, this.fetchManager );
 		}
 
 		const match = wiki.match( Fandom.REGEXP_WIKI );
 		if ( match ) {
-			return new FandomWiki( this, `https://${match[2]}.fandom.com${match[1] ? `/${match[1]}` : ''}/api.php`, this.fetchManager );
+			return new FandomWiki( this, `https://${match[2]}.fandom.com${match[1] ? `/${match[1]}` : ''}`, this.fetchManager );
 		}
 
 		throw new Error( 'Specified wiki is not on the Fandom network.' );
