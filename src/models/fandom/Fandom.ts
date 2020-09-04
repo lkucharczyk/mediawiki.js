@@ -1,5 +1,6 @@
 import { FandomWiki } from './FandomWiki';
 import { FetchManager, FetchManagerOptions } from '../../util/FetchManager';
+import { RequestInit } from 'node-fetch';
 import {
 	UserDetails,
 	UserDetailsResult,
@@ -13,10 +14,10 @@ export class Fandom extends WikiNetwork {
 	public static readonly REGEXP_LANG = /^[a-z]{2}(?:-[a-z]{2,})?$/
 	public static readonly REGEXP_WIKI = /^(?:([a-z]{2}(?:-[a-z]{2,})?)\.)?([a-z0-9-_]+)$/
 
-	central : FandomWiki;
+	public readonly central : FandomWiki;
 
-	public constructor( fetchManager? : FetchManager|FetchManagerOptions ) {
-		super( 'Fandom', fetchManager );
+	public constructor( fetchManager? : FetchManager|FetchManagerOptions, requestOptions? : RequestInit ) {
+		super( 'Fandom', fetchManager, requestOptions );
 		this.central = this.getWiki( 'community' );
 	}
 
@@ -34,12 +35,12 @@ export class Fandom extends WikiNetwork {
 				entrypoint += `/${path[1]}`;
 			}
 
-			return new FandomWiki( this, entrypoint, this.fetchManager );
+			return new FandomWiki( this, entrypoint, this.fetchManager, this.requestOptions );
 		}
 
 		const match = wiki.match( Fandom.REGEXP_WIKI );
 		if ( match ) {
-			return new FandomWiki( this, `https://${match[2]}.fandom.com${match[1] ? `/${match[1]}` : ''}`, this.fetchManager );
+			return new FandomWiki( this, `https://${match[2]}.fandom.com${match[1] ? `/${match[1]}` : ''}`, this.fetchManager, this.requestOptions );
 		}
 
 		throw new Error( 'Specified wiki is not on the Fandom network.' );

@@ -7,8 +7,8 @@ import { Wiki } from '../Wiki';
 export class FandomWiki extends Wiki {
 	public network : Fandom;
 
-	constructor( network : Fandom, entrypoint : string, fetchManager : FetchManager|FetchManagerOptions ) {
-		super( entrypoint, fetchManager );
+	constructor( network : Fandom, entrypoint : string, fetchManager? : FetchManager|FetchManagerOptions, requestOptions? : RequestInit ) {
+		super( entrypoint, fetchManager, requestOptions );
 		this.network = network;
 	}
 
