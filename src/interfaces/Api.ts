@@ -7,3 +7,54 @@ export interface ApiError {
 export interface ApiResult {
 	error? : ApiError;
 };
+
+export interface Interwiki {
+	api? : string;
+	language? : string;
+	local? : string|boolean;
+	prefix : string;
+	url : string;
+};
+
+export type ApiQuerySiteinfoProp = 'general'|'interwikimap'|'statistics';
+
+export interface ApiQuerySiteinfoResult extends ApiResult {
+	query: {
+		general: {
+			articlepath : string;
+			base : string;
+			case : 'first-letter'|'case-sensitive';
+			generator : string;
+			lang : string;
+			mainpage : string;
+			script : string;
+			scriptpath : string;
+			server : string;
+			sitename : string;
+			timezone : string;
+			timeoffset : number;
+			wikiid : string;
+		}
+	}
+};
+
+export interface ApiQueryInterwikiMapResult extends ApiResult {
+	query: {
+		interwikimap : Interwiki[];
+	}
+};
+
+export interface ApiQueryStatisticsResult extends ApiResult {
+	query: {
+		statistics: {
+			activeusers : number;
+			admins : number;
+			articles : number;
+			edits : number;
+			images : number;
+			jobs : number;
+			pages : number;
+			users : number;
+		}
+	}
+};

@@ -1,6 +1,12 @@
-import { ApiResult } from '../interfaces/Api';
+import {
+	ApiQueryInterwikiMapResult,
+	ApiQuerySiteinfoProp,
+	ApiQuerySiteinfoResult,
+	ApiResult,
+	ApiQueryStatisticsResult
+} from '../interfaces/Api';
 import { FetchManager, FetchManagerOptions } from '../util/FetchManager';
-import { Response, RequestInit } from 'node-fetch';
+import { RequestInit, Response } from 'node-fetch';
 import { WikiNetwork } from './WikiNetwork';
 
 export class Wiki {
@@ -12,7 +18,11 @@ export class Wiki {
 
 	/** @param entrypoint api.php entry point */
 	public constructor( entrypoint : string, fetchManager? : FetchManager|FetchManagerOptions, requestOptions? : RequestInit ) {
-		if ( entrypoint.endsWith( '.php' ) || entrypoint.endsWith( '/' ) ) {
+		if ( entrypoint.endsWith( '.php' ) || entrypoint.endsWith( '/$1' ) || entrypoint.endsWith( '/' ) ) {
+			entrypoint = entrypoint.substring( 0, entrypoint.lastIndexOf( '/' ) );
+		}
+
+		if ( entrypoint.endsWith( '/wiki' ) || entrypoint.endsWith( '/w' ) ) {
 			entrypoint = entrypoint.substring( 0, entrypoint.lastIndexOf( '/' ) );
 		}
 
@@ -37,12 +47,24 @@ export class Wiki {
 		return this.fetchManager.queue( url, Object.assign( {}, this.requestOptions, options ) );
 	}
 
-	public async callApi( params : Record<string, string>, options? : RequestInit ) : Promise<ApiResult> {
+	public async callApi<T extends ApiResult = ApiResult>( params : Record<string, string>, options? : RequestInit ) : Promise<T> {
 		params.format = 'json';
 		return ( await this.call( 'api.php', params, options ) ).json();
 	}
 
 	public async callIndex( params : Record<string, string>, options? : RequestInit ) : Promise<Response> {
 		return this.call( 'index.php', params, options );
+	}
+
+	public async getSiteinfo<T extends ApiQuerySiteinfoProp[]>( props : T ) : Promise<
+		( 'general'      extends T[number] ? ApiQuerySiteinfoResult     : {} ) &
+		( 'interwikimap' extends T[number] ? ApiQueryInterwikiMapResult : {} ) &
+		( 'statistics'   extends T[number] ? ApiQueryStatisticsResult   : {} )
+	> {
+		return this.callApi( {
+			action: 'query',
+			meta: 'siteinfo',
+			siprop: props.join( '|' )
+		} );
 	}
 };
