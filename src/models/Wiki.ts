@@ -45,15 +45,34 @@ export class Wiki {
 			url += `?${( new URLSearchParams( params ) ).toString()}`;
 		}
 
-		return this.fetchManager.queue( url, Object.assign( {}, this.requestOptions, options ) );
+		const requestOptions = Object.assign( {}, this.requestOptions, options );
+		if ( typeof this.requestOptions?.headers === 'object' && typeof options?.headers === 'object' ) {
+			requestOptions.headers = Object.assign( {}, this.requestOptions.headers, options.headers );
+		}
+
+		return this.fetchManager.queue( url, requestOptions );
 	}
 
 	public async callApi<T extends ApiResult = ApiResult>( params : Record<string, string>, options? : RequestInit ) : Promise<T> {
 		params.format = 'json';
+
+		if ( options?.method === 'POST' && options?.body === undefined ) {
+			options = options ?? {};
+			options.headers = options.headers ?? {};
+
+			options.body = JSON.stringify( params );
+			params = {};
+			Object.assign( options.headers, { 'Content-Type': 'application/json' } );
+		}
+
 		return ( await this.call( 'api.php', params, options ) ).json();
 	}
 
-	public async callIndex( params : Record<string, string>, options? : RequestInit ) : Promise<Response> {
+	public async callIndex( params : string|Record<string, string>, options? : RequestInit ) : Promise<Response> {
+		if ( typeof params === 'string' ){
+			params = { title: params };
+		}
+
 		return this.call( 'index.php', params, options );
 	}
 
