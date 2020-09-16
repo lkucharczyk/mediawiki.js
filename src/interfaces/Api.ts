@@ -19,8 +19,8 @@ export interface Interwiki {
 export type ApiQuerySiteinfoProp = 'general'|'interwikimap'|'statistics';
 
 export interface ApiQuerySiteinfoResult extends ApiResult {
-	query: {
-		general: {
+	query : {
+		general : {
 			articlepath : string;
 			base : string;
 			case : 'first-letter'|'case-sensitive';
@@ -39,14 +39,14 @@ export interface ApiQuerySiteinfoResult extends ApiResult {
 };
 
 export interface ApiQueryInterwikiMapResult extends ApiResult {
-	query: {
+	query : {
 		interwikimap : Interwiki[];
 	}
 };
 
 export interface ApiQueryStatisticsResult extends ApiResult {
-	query: {
-		statistics: {
+	query : {
+		statistics : {
 			activeusers : number;
 			admins : number;
 			articles : number;
@@ -55,6 +55,16 @@ export interface ApiQueryStatisticsResult extends ApiResult {
 			jobs : number;
 			pages : number;
 			users : number;
+		}
+	}
+};
+
+export interface ApiQueryToken extends ApiResult {
+	query : {
+		pages : {
+			[ key : string ] : {
+				edittoken : string
+			}
 		}
 	}
 };

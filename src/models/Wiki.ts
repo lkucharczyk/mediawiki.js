@@ -3,7 +3,8 @@ import {
 	ApiQuerySiteinfoProp,
 	ApiQuerySiteinfoResult,
 	ApiResult,
-	ApiQueryStatisticsResult
+	ApiQueryStatisticsResult,
+	ApiQueryToken
 } from '../interfaces/Api';
 import { FetchManager, FetchManagerOptions } from '../util/FetchManager';
 import { RequestInit, Response } from 'node-fetch';
@@ -66,5 +67,16 @@ export class Wiki {
 			meta: 'siteinfo',
 			siprop: props.join( '|' )
 		} );
+	}
+
+	public async getEditToken() : Promise<string> {
+		const res = await this.callApi<ApiQueryToken>( {
+			action: 'query',
+			prop: 'info',
+			intoken: 'edit',
+			titles: 'Main_Page'
+		} );
+
+		return Object.values( res.query.pages )[0].edittoken;
 	}
 };
