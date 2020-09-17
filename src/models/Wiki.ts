@@ -60,9 +60,9 @@ export class Wiki {
 			options = options ?? {};
 			options.headers = options.headers ?? {};
 
-			options.body = JSON.stringify( params );
+			options.body = new URLSearchParams( params ).toString();
 			params = {};
-			Object.assign( options.headers, { 'Content-Type': 'application/json' } );
+			Object.assign( options.headers, { 'Content-Type': 'application/x-www-form-urlencoded' } );
 		}
 
 		return ( await this.call( 'api.php', params, options ) ).json();
