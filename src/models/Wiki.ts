@@ -8,12 +8,16 @@ import {
 } from '../interfaces/Api';
 import { FetchManager, FetchManagerOptions } from '../util/FetchManager';
 import { RequestInit, Response } from 'node-fetch';
+import { UncompleteModel } from './UncompleteModel';
 import { WikiNetwork } from './WikiNetwork';
+export class Wiki extends UncompleteModel {
+	public static readonly COMPONENTS = [ 'lang' ];
 
-export class Wiki {
 	public readonly entrypoint : string;
 	public network? : WikiNetwork;
 	public requestOptions : RequestInit;
+
+	public lang? : string;
 
 	protected readonly fetchManager : FetchManager;
 
@@ -27,6 +31,7 @@ export class Wiki {
 			entrypoint = entrypoint.substring( 0, entrypoint.lastIndexOf( '/' ) );
 		}
 
+		super();
 		this.entrypoint = entrypoint;
 		this.fetchManager = fetchManager instanceof FetchManager
 			? fetchManager
@@ -97,5 +102,16 @@ export class Wiki {
 		} );
 
 		return Object.values( res.query.pages )[0].edittoken;
+	}
+
+	protected async __load( components : string[] ) : Promise<void> {
+		const SI_COMPONENTS = [ 'lang' ];
+		if ( components.find( e => SI_COMPONENTS.includes( e ) ) ) {
+			const si = ( await this.getSiteinfo( [ 'general' ] ) ).query.general;
+			this.lang = si.lang;
+
+			this.setLoaded( SI_COMPONENTS );
+			components = components.filter( e => !SI_COMPONENTS.includes( e ) );
+		}
 	}
 };

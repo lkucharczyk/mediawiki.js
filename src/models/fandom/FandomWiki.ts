@@ -5,7 +5,13 @@ import { RequestInit } from 'node-fetch';
 import { Wiki } from '../Wiki';
 
 export class FandomWiki extends Wiki {
-	public network : Fandom;
+	public static readonly COMPONENTS = [ ...Wiki.COMPONENTS, 'id' ];
+
+	public readonly network : Fandom;
+
+	public id? : number;
+
+	#mercuryWikiVariables? : MercuryWikiVariables;
 
 	constructor( network : Fandom, entrypoint : string, fetchManager? : FetchManager|FetchManagerOptions, requestOptions? : RequestInit ) {
 		super( entrypoint, fetchManager, requestOptions );
@@ -18,9 +24,37 @@ export class FandomWiki extends Wiki {
 	}
 
 	public async getMercuryWikiVariables() : Promise<MercuryWikiVariables> {
-		return ( await this.callNirvana<MercuryWikiVariablesResult>( {
-			controller: 'MercuryApiController',
-			method: 'getWikiVariables'
-		} ) ).data;
+		if ( !this.#mercuryWikiVariables ) {
+			this.#mercuryWikiVariables = ( await this.callNirvana<MercuryWikiVariablesResult>( {
+				controller: 'MercuryApiController',
+				method: 'getWikiVariables'
+			} ) ).data;
+		}
+
+		return this.#mercuryWikiVariables;
+	}
+
+	protected async __load( components : string[] ) : Promise<void> {
+		const MWV_COMPONENTS = [ 'id', 'lang' ];
+		if ( components.find( e => MWV_COMPONENTS.includes( e ) ) ) {
+			const mwv = await this.getMercuryWikiVariables();
+			this.id = mwv.id;
+			this.lang = mwv.language.content;
+
+			this.setLoaded( MWV_COMPONENTS );
+			components = components.filter( e => !MWV_COMPONENTS.includes( e ) );
+		}
+
+		if ( components.length ) {
+			super.__load( components );
+		}
+	}
+
+	public clear() : void {
+		this.id = undefined;
+		this.lang = undefined;
+		this.#mercuryWikiVariables = undefined;
+
+		super.clear();
 	}
 };
