@@ -1,4 +1,6 @@
 import { Fandom } from './Fandom';
+import { FandomUser } from './FandomUser';
+import { FandomUserSet } from './FandomUserSet';
 import { FetchManager, FetchManagerOptions } from '../../util/util';
 import { MercuryWikiVariables, MercuryWikiVariablesResult, NirvanaResult } from '../../interfaces/Fandom';
 import { RequestInit } from 'node-fetch';
@@ -32,6 +34,14 @@ export class FandomWiki extends Wiki {
 		}
 
 		return this.#mercuryWikiVariables;
+	}
+
+	public getUser( name : string|number ) : FandomUser {
+		return new FandomUser( name, this );
+	}
+
+	public getUsers( names : (string|number)[] ) : FandomUserSet {
+		return new FandomUserSet( names.map( e => this.getUser( e ) ) );
 	}
 
 	protected async __load( components : string[] ) : Promise<void> {

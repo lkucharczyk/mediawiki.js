@@ -68,3 +68,15 @@ export interface ApiQueryToken extends ApiResult {
 		}
 	}
 };
+
+export interface ApiUser {
+	userid : number;
+	name : string;
+	groups : string[];
+};
+
+export interface ApiQueryListUsers extends ApiResult {
+	query : {
+		users : ApiUser[];
+	}
+};

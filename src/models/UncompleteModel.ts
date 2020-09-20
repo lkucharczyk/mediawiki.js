@@ -6,7 +6,7 @@ export abstract class UncompleteModel {
 
 	protected async abstract __load( components : string[] ) : Promise<void>;
 
-	public async load( ...components : string[] ) : Promise<void> {
+	public async load( ...components : string[] ) : Promise<this> {
 		const constructor = this.constructor as typeof UncompleteModel;
 		const promises = [];
 		const toload : string[] = [];
@@ -37,6 +37,8 @@ export abstract class UncompleteModel {
 		}
 
 		await Promise.all( promises );
+
+		return this;
 	}
 
 	public addLoading( components : string|string[], promise : Promise<void> ) : void {

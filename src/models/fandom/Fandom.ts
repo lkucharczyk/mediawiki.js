@@ -1,3 +1,5 @@
+import { FandomUser } from './FandomUser';
+import { FandomUserSet } from './FandomUserSet';
 import { FandomWiki } from './FandomWiki';
 import { FetchManager, FetchManagerOptions } from '../../util/FetchManager';
 import { RequestInit } from 'node-fetch';
@@ -9,7 +11,12 @@ import {
 } from '../../interfaces/Fandom';
 import { WikiNetwork } from '../WikiNetwork';
 
-export class Fandom extends WikiNetwork {
+interface Fandom extends WikiNetwork {
+	getUser( name : string|number ) : FandomUser;
+	getUsers( name : (string|number)[] ) : FandomUserSet;
+};
+
+class Fandom extends WikiNetwork {
 	public static readonly REGEXP_DOMAIN = /\.(?:fandom\.com|\wikia\.(?:com|org))$/
 	public static readonly REGEXP_LANG = /^[a-z]{2}(?:-[a-z]{2,})?$/
 	public static readonly REGEXP_WIKI = /^(?:([a-z]{2}(?:-[a-z]{2,})?)\.)?([a-z0-9-_]+)$/
@@ -19,6 +26,9 @@ export class Fandom extends WikiNetwork {
 	public constructor( fetchManager? : FetchManager|FetchManagerOptions, requestOptions? : RequestInit ) {
 		super( 'Fandom', fetchManager, requestOptions );
 		this.central = this.getWiki( 'community' );
+
+		this.getUser = this.central.getUser.bind( this.central );
+		this.getUsers = this.central.getUsers.bind( this.central );
 	}
 
 	public getWiki( wiki : string ) : FandomWiki {
@@ -70,3 +80,5 @@ export class Fandom extends WikiNetwork {
 		} ) ).items;
 	}
 };
+
+export { Fandom };

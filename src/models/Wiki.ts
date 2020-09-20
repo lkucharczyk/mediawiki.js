@@ -10,6 +10,9 @@ import { FetchManager, FetchManagerOptions } from '../util/FetchManager';
 import { RequestInit, Response } from 'node-fetch';
 import { UncompleteModel } from './UncompleteModel';
 import { WikiNetwork } from './WikiNetwork';
+import { WikiUser } from './WikiUser';
+import { WikiUserSet } from './WikiUserSet';
+
 export class Wiki extends UncompleteModel {
 	public static readonly COMPONENTS = [ 'lang' ];
 
@@ -102,6 +105,14 @@ export class Wiki extends UncompleteModel {
 		} );
 
 		return Object.values( res.query.pages )[0].edittoken;
+	}
+
+	public getUser( name : string|number ) : WikiUser {
+		return new WikiUser( name, this );
+	}
+
+	public getUsers( names : (string|number)[] ) : WikiUserSet {
+		return new WikiUserSet( names.map( e => this.getUser( e ) ) );
 	}
 
 	protected async __load( components : string[] ) : Promise<void> {
