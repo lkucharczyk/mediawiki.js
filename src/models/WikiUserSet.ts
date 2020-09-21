@@ -29,7 +29,10 @@ export class WikiUserSet<T extends WikiUser = WikiUser> extends UncompleteModelS
 			if ( ids.length ) {
 				promises.push(
 					this.models[0].wiki.callApi<ApiQueryListUsers>(
-						Object.assign( { ususerids: ids.join( '|' ) }, params )
+						Object.assign( {
+							usids: ids.join( '|' ),
+							ususerids: ids.join( '|' )
+						}, params )
 					).then( e => users.push( ...e.query.users ) )
 				);
 			}

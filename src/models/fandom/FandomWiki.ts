@@ -1,17 +1,22 @@
 import { Fandom } from './Fandom';
 import { FandomUser } from './FandomUser';
 import { FandomUserSet } from './FandomUserSet';
-import { FetchManager, FetchManagerOptions } from '../../util/util';
+import { FetchManager, FetchManagerOptions, uniqueArray } from '../../util/util';
 import { MercuryWikiVariables, MercuryWikiVariablesResult, NirvanaResult } from '../../interfaces/Fandom';
 import { RequestInit } from 'node-fetch';
 import { Wiki } from '../Wiki';
 
 export class FandomWiki extends Wiki {
-	public static readonly COMPONENTS = [ ...Wiki.COMPONENTS, 'id' ];
+	public static readonly COMPONENTS_MERCURYWIKIVARIABLES = [ 'articlepath', 'id', 'lang', 'name', 'scriptpath', 'server', 'vertical' ];
+	public static readonly COMPONENTS_WIKIDETAILS = [ 'founder', 'foundingdate', 'lang', 'name', 'server', 'vertical' ];
+	public static readonly COMPONENTS = uniqueArray( Wiki.COMPONENTS, FandomWiki.COMPONENTS_MERCURYWIKIVARIABLES, FandomWiki.COMPONENTS_WIKIDETAILS );
 
 	public readonly network : Fandom;
 
+	public founder? : FandomUser;
+	public foundingdate? : string;
 	public id? : number;
+	public vertical? : string;
 
 	#mercuryWikiVariables? : MercuryWikiVariables;
 
@@ -45,18 +50,46 @@ export class FandomWiki extends Wiki {
 	}
 
 	protected async __load( components : string[] ) : Promise<void> {
-		const MWV_COMPONENTS = [ 'id', 'lang' ];
-		if ( components.find( e => MWV_COMPONENTS.includes( e ) ) ) {
+		const loadWikiDetails = components.find( e => FandomWiki.COMPONENTS_WIKIDETAILS.includes( e ) )
+		if ( !this.id && loadWikiDetails ) {
+			components.push( 'id' );
+		}
+
+		if ( components.find( e => FandomWiki.COMPONENTS_MERCURYWIKIVARIABLES.includes( e ) ) ) {
 			const mwv = await this.getMercuryWikiVariables();
+
+			this.articlepath = mwv.articlePath + '$1';
 			this.id = mwv.id;
 			this.lang = mwv.language.content;
+			this.name = mwv.siteName;
+			this.server = mwv.basePath;
+			this.scriptpath = mwv.scriptPath;
+			this.vertical = mwv.vertical;
 
-			this.setLoaded( MWV_COMPONENTS );
-			components = components.filter( e => !MWV_COMPONENTS.includes( e ) );
+			this.setLoaded( FandomWiki.COMPONENTS_MERCURYWIKIVARIABLES );
+			components = components.filter( e => !FandomWiki.COMPONENTS_MERCURYWIKIVARIABLES.includes( e ) );
+		}
+
+		if ( this.id && loadWikiDetails ) {
+			const details = ( await this.network.getWikiDetails( this.id ) )[this.id];
+
+			const founderID = Number.parseInt( details.founding_user_id );
+			if ( founderID >= 0 ) {
+				this.founder = this.getUser( founderID );
+			}
+
+			this.foundingdate = details.creation_date;
+			this.lang = details.lang;
+			this.name = details.name;
+			this.server = `https://${ details.domain }`;
+			this.vertical = details.hub;
+
+			this.setLoaded( FandomWiki.COMPONENTS_WIKIDETAILS );
+			components = components.filter( e => !FandomWiki.COMPONENTS_WIKIDETAILS.includes( e ) );
 		}
 
 		if ( components.length ) {
-			super.__load( components );
+			return super.__load( components );
 		}
 	}
 

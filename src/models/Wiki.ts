@@ -14,13 +14,19 @@ import { WikiUser } from './WikiUser';
 import { WikiUserSet } from './WikiUserSet';
 
 export class Wiki extends UncompleteModel {
-	public static readonly COMPONENTS = [ 'lang' ];
+	public static readonly COMPONENTS_SITEINFO = [ 'articlepath', 'generator', 'lang', 'name', 'server', 'scriptpath' ];
+	public static readonly COMPONENTS = Wiki.COMPONENTS_SITEINFO;
 
 	public readonly entrypoint : string;
 	public network? : WikiNetwork;
 	public requestOptions : RequestInit;
 
+	public articlepath? : string;
+	public generator? : string;
 	public lang? : string;
+	public name? : string;
+	public server? : string;
+	public scriptpath? : string;
 
 	protected readonly fetchManager : FetchManager;
 
@@ -43,22 +49,12 @@ export class Wiki extends UncompleteModel {
 	}
 
 	public async call( path? : string, params? : Record<string, string>, options? : RequestInit ) : Promise<Response> {
-		let url = this.entrypoint;
-
-		if ( path ) {
-			url += `/${path}`;
-		}
-
-		if ( params ) {
-			url += `?${( new URLSearchParams( params ) ).toString()}`;
-		}
-
 		const requestOptions = Object.assign( {}, this.requestOptions, options );
 		if ( typeof this.requestOptions?.headers === 'object' && typeof options?.headers === 'object' ) {
 			requestOptions.headers = Object.assign( {}, this.requestOptions.headers, options.headers );
 		}
 
-		return this.fetchManager.queue( url, requestOptions );
+		return this.fetchManager.queue( this.getURL( path, params ), requestOptions );
 	}
 
 	public async callApi<T extends ApiResult = ApiResult>( params : Record<string, string>, options? : RequestInit ) : Promise<T> {
@@ -107,6 +103,22 @@ export class Wiki extends UncompleteModel {
 		return Object.values( res.query.pages )[0].edittoken;
 	}
 
+	getURL( path = '', params? : any ) : string {
+		const base : string = this.scriptpath && this.server
+			? this.server + this.scriptpath
+			: this.entrypoint;
+
+		return encodeURI( `${ base }/${ path }` ) + ( params ? `?${( new URLSearchParams( params ) ).toString()}` : '' );
+	}
+
+	getWikiURL( path = '', params? : any ) : string {
+		const base : string = this.articlepath && this.server
+			? this.server + this.articlepath
+			: `${ this.entrypoint }/$1`;
+
+		return encodeURI( base.replace( '$1', path ) ) + ( params ? `?${( new URLSearchParams( params ) ).toString()}` : '' );
+	}
+
 	public getUser( name : string|number ) : WikiUser {
 		return new WikiUser( name, this );
 	}
@@ -116,13 +128,18 @@ export class Wiki extends UncompleteModel {
 	}
 
 	protected async __load( components : string[] ) : Promise<void> {
-		const SI_COMPONENTS = [ 'lang' ];
-		if ( components.find( e => SI_COMPONENTS.includes( e ) ) ) {
+		if ( components.find( e => Wiki.COMPONENTS_SITEINFO.includes( e ) ) ) {
 			const si = ( await this.getSiteinfo( [ 'general' ] ) ).query.general;
-			this.lang = si.lang;
 
-			this.setLoaded( SI_COMPONENTS );
-			components = components.filter( e => !SI_COMPONENTS.includes( e ) );
+			this.articlepath = si.articlepath;
+			this.generator = si.generator;
+			this.lang = si.lang;
+			this.name = si.sitename;
+			this.server = si.server;
+			this.scriptpath = si.scriptpath;
+
+			this.setLoaded( Wiki.COMPONENTS_SITEINFO );
+			components = components.filter( e => !Wiki.COMPONENTS_SITEINFO.includes( e ) );
 		}
 	}
 };

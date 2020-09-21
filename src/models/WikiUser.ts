@@ -28,6 +28,11 @@ export class WikiUser extends UncompleteModel {
 		}
 	}
 
+	public async getURL( params? : Record<string, string> ) : Promise<string> {
+		await this.load( 'name' );
+		return this.wiki.getWikiURL( `User:${ encodeURIComponent( this.name ) }`, params );
+	}
+
 	protected async __load( components : string[] ) : Promise<void> {
 		await new WikiUserSet( [ this ] ).load( ...components );
 	}
