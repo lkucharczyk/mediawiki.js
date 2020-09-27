@@ -1,7 +1,6 @@
 import { Fandom } from './Fandom';
-import { FandomUserSet } from './FandomUserSet';
 import { FandomWiki } from './FandomWiki';
-import { WikiUser } from '../WikiUser';
+import { WikiUser, WikiUserSet } from '../WikiUser';
 
 interface FandomUser extends WikiUser {
 	wiki : FandomWiki;
@@ -9,6 +8,8 @@ interface FandomUser extends WikiUser {
 };
 
 class FandomUser extends WikiUser {
+	avatar? : string;
+
 	public constructor( name : string|number, wiki : FandomWiki ) {
 		super( name, wiki );
 	}
@@ -18,4 +19,28 @@ class FandomUser extends WikiUser {
 	}
 };
 
-export { FandomUser };
+class FandomUserSet extends WikiUserSet<FandomUser> {
+};
+
+const FandomUserLoader = {
+	components: [ 'avatar', 'name' ],
+	dependencies: [ 'id' ],
+	async load( set : FandomUser|FandomUserSet ) {
+		const models = set instanceof FandomUser ? [ set ] : set.models;
+
+		const res = await models[0].network.getUserDetails( models.map( e => e.id ) as number[] );
+		for ( const user of res ) {
+			for ( const model of models ) {
+				if ( model.id === user.user_id || model.name === user.name ) {
+					model.name = user.name;
+					model.avatar = user.avatar;
+				}
+			}
+		}
+	}
+}
+
+FandomUser.registerLoader( ...WikiUser.LOADERS, FandomUserLoader );
+FandomUserSet.registerLoader( ...WikiUserSet.LOADERS, FandomUserLoader );
+
+export { FandomUser, FandomUserSet };

@@ -6,8 +6,8 @@
 	"author": "Łukasz Kucharczyk",
 	"license": "ISC",
 	"scripts": {
-		"tsc": "rimraf \"build/!(.gitignore)\" && tsc",
-		"prepare": "npm run tsc",
+		"build": "rimraf \"build/!(.gitignore)\" && tsc",
+		"prepare": "npm run build",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"files": [

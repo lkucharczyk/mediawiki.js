@@ -1,11 +1,10 @@
+import { ApiQueryListUsers, ApiUser } from '../interfaces/Api';
 import { UncompleteModel } from "./UncompleteModel";
+import { UncompleteModelSet } from './UncompleteModelSet';
 import { Wiki } from "./Wiki";
 import { WikiNetwork } from "./WikiNetwork";
-import { WikiUserSet } from './WikiUserSet';
 
 export class WikiUser extends UncompleteModel {
-	public static readonly COMPONENTS = [ 'id', 'name', 'groups' ];
-
 	public id? : number;
 	public name : string = '';
 	public network? : WikiNetwork;
@@ -33,10 +32,6 @@ export class WikiUser extends UncompleteModel {
 		return this.wiki.getWikiURL( `User:${ encodeURIComponent( this.name ) }`, params );
 	}
 
-	protected async __load( components : string[] ) : Promise<void> {
-		await new WikiUserSet( [ this ] ).load( ...components );
-	}
-
 	public clear() : void {
 		this.groups = [];
 
@@ -51,3 +46,67 @@ export class WikiUser extends UncompleteModel {
 		}
 	}
 };
+
+export class WikiUserSet<T extends WikiUser = WikiUser> extends UncompleteModelSet<T> {
+};
+
+const WikiUserLoader = {
+	components: [ 'id', 'name', 'groups' ],
+	async load( set : WikiUser|WikiUserSet ) {
+		const models = set instanceof WikiUser ? [ set ] : set.models;
+
+		const ids : number[] = [];
+		const names : string[] = [];
+
+		for ( const model of models ) {
+			if ( model.id ) {
+				ids.push( model.id );
+			} else {
+				names.push( model.name );
+			}
+		}
+
+		const users : ApiUser[] = [];
+		const promises = [];
+
+		const params = {
+			action: 'query',
+			list: 'users',
+			usprop: 'groups'
+		};
+
+		if ( ids.length ) {
+			promises.push(
+				models[0].wiki.callApi<ApiQueryListUsers>(
+					Object.assign( {
+						usids: ids.join( '|' ),
+						ususerids: ids.join( '|' )
+					}, params )
+				).then( e => users.push( ...e.query.users ) )
+			);
+		}
+
+		if ( names.length ) {
+			promises.push(
+				models[0].wiki.callApi<ApiQueryListUsers>(
+					Object.assign( { ususers: names.join( '|' ) }, params )
+				).then( e => users.push( ...e.query.users ) )
+			);
+		}
+
+		await Promise.all( promises );
+
+		for ( const user of users ) {
+			for ( const model of models ) {
+				if ( model.id === user.userid || model.name === user.name ) {
+					model.id = user.userid;
+					model.name = user.name;
+					model.groups = user.groups;
+				}
+			}
+		}
+	}
+};
+
+WikiUser.registerLoader( WikiUserLoader );
+WikiUserSet.registerLoader( WikiUserLoader );

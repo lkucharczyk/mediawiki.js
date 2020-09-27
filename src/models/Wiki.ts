@@ -2,21 +2,18 @@ import {
 	ApiQueryInterwikiMapResult,
 	ApiQuerySiteinfoProp,
 	ApiQuerySiteinfoResult,
-	ApiResult,
 	ApiQueryStatisticsResult,
-	ApiQueryToken
+	ApiQueryToken,
+	ApiResult
 } from '../interfaces/Api';
 import { FetchManager, FetchManagerOptions } from '../util/FetchManager';
 import { RequestInit, Response } from 'node-fetch';
 import { UncompleteModel } from './UncompleteModel';
+import { UncompleteModelSet } from './UncompleteModelSet';
 import { WikiNetwork } from './WikiNetwork';
-import { WikiUser } from './WikiUser';
-import { WikiUserSet } from './WikiUserSet';
+import { WikiUser, WikiUserSet } from './WikiUser';
 
 export class Wiki extends UncompleteModel {
-	public static readonly COMPONENTS_SITEINFO = [ 'articlepath', 'generator', 'lang', 'name', 'server', 'scriptpath' ];
-	public static readonly COMPONENTS = Wiki.COMPONENTS_SITEINFO;
-
 	public readonly entrypoint : string;
 	public network? : WikiNetwork;
 	public requestOptions : RequestInit;
@@ -126,20 +123,22 @@ export class Wiki extends UncompleteModel {
 	public getUsers( names : (string|number)[] ) : WikiUserSet {
 		return new WikiUserSet( names.map( e => this.getUser( e ) ) );
 	}
+};
 
-	protected async __load( components : string[] ) : Promise<void> {
-		if ( components.find( e => Wiki.COMPONENTS_SITEINFO.includes( e ) ) ) {
-			const si = ( await this.getSiteinfo( [ 'general' ] ) ).query.general;
+Wiki.registerLoader( {
+	components: [ 'articlepath', 'generator', 'lang', 'name', 'server', 'scriptpath' ],
+	async load( set : Wiki|UncompleteModelSet<Wiki> ) {
+		const models : Wiki[] = set instanceof Wiki ? [ set ] : set.models;
 
-			this.articlepath = si.articlepath;
-			this.generator = si.generator;
-			this.lang = si.lang;
-			this.name = si.sitename;
-			this.server = si.server;
-			this.scriptpath = si.scriptpath;
+		for ( const model of models ) {
+			const si = ( await model.getSiteinfo( [ 'general' ] ) ).query.general;
 
-			this.setLoaded( Wiki.COMPONENTS_SITEINFO );
-			components = components.filter( e => !Wiki.COMPONENTS_SITEINFO.includes( e ) );
+			model.articlepath = si.articlepath;
+			model.generator = si.generator;
+			model.lang = si.lang;
+			model.name = si.sitename;
+			model.server = si.server;
+			model.scriptpath = si.scriptpath;
 		}
 	}
-};
+} );

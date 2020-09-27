@@ -1,10 +1,17 @@
+import { UncompleteModelSet } from './UncompleteModelSet';
+
+export interface UncompleteModelLoader<T extends UncompleteModel = UncompleteModel> {
+	components : string[];
+	dependencies? : string[];
+	load : ( ( model : T ) => Promise<void> ) | ( ( model : T|UncompleteModelSet<T> ) => Promise<void> );
+};
+
 export abstract class UncompleteModel {
-	public static readonly COMPONENTS : string[] = [];
+	public static COMPONENTS : string[] = [];
+	public static LOADERS : UncompleteModelLoader[] = [];
 
 	#loading : { [component : string] : Promise<void> } = {};
 	#loaded : string[] = [];
-
-	protected async abstract __load( components : string[] ) : Promise<void>;
 
 	public async load( ...components : string[] ) : Promise<this> {
 		const constructor = this.constructor as typeof UncompleteModel;
@@ -29,10 +36,19 @@ export abstract class UncompleteModel {
 		}
 
 		if ( toload.length ) {
-			const loader = this.__load( toload );
-			promises.push( loader );
-			for ( const component of toload ) {
-				this.#loading[component] = loader;
+			for ( const loader of constructor.LOADERS ) {
+				if ( components.find( e => loader.components.includes( e ) ) ) {
+					let promise : Promise<any>;
+					if ( loader.dependencies ) {
+						promise = this.load( ...loader.dependencies ).then( () => loader.load( this ) );
+					} else {
+						promise = loader.load( this );
+					}
+
+					promises.push( promise );
+					this.addLoading( components, promise );
+					components = components.filter( e => !loader.components.includes( e ) );
+				}
 			}
 		}
 
@@ -48,25 +64,35 @@ export abstract class UncompleteModel {
 			components = [ components ];
 		}
 
+		promise.then( () => this.setLoaded( components ) );
+
 		for ( const component of components ) {
 			if ( constructor.COMPONENTS.includes( component ) ) {
-				this.#loading.component = promise;
+				this.#loading[component] = promise;
 			} else {
 				throw new Error( `"${component}" isn't a loadable component in ${constructor.name}.` );
 			}
 		}
 	}
 
-	public isLoading( components : string|string[] ) : boolean {
-		if ( this.isLoaded( components ) ) {
-			return true;
-		}
+	public isLoading( components : string|string[] ) : { [ component : string ] : boolean|Promise<void> } {
+		const out : { [ component : string ] : boolean|Promise<any> } = {};
 
 		if ( !Array.isArray( components ) ) {
 			components = [ components ];
 		}
 
-		return !components.find( e => !( e in this.#loaded ) );
+		for ( const component of components ) {
+			if ( this.isLoaded( components ) ) {
+				out[component] = true;
+			} else if ( component in this.#loading ) {
+				out[component] = this.#loading[component]
+			} else {
+				out[component] = false;
+			}
+		}
+
+		return out;
 	}
 
 	public isLoaded( components : string|string[] ) : boolean {
@@ -91,6 +117,19 @@ export abstract class UncompleteModel {
 				throw new Error( `"${component}" isn't a loadable component in ${constructor.name}.` );
 			}
 		}
+	}
+
+	public static registerLoader<T extends UncompleteModel>( ...loaders : UncompleteModelLoader<T>[] ) : void {
+		if ( !this.hasOwnProperty( 'COMPONENTS' ) ) {
+			this.COMPONENTS = [];
+		}
+
+		if ( !this.hasOwnProperty( 'LOADERS' ) ) {
+			this.LOADERS = [];
+		}
+
+		this.LOADERS.push( ...loaders as any );
+		this.COMPONENTS = Array.from( new Set( [ this.COMPONENTS, ...loaders.map( e => e.components ) ].flat() ) );
 	}
 
 	public clear() : void {

@@ -1,16 +1,17 @@
 import { Fandom } from './Fandom';
-import { FandomUser } from './FandomUser';
-import { FandomUserSet } from './FandomUserSet';
-import { FetchManager, FetchManagerOptions, uniqueArray } from '../../util/util';
+import { FandomUser, FandomUserSet } from './FandomUser';
+import { FetchManager, FetchManagerOptions } from '../../util/util';
 import { MercuryWikiVariables, MercuryWikiVariablesResult, NirvanaResult } from '../../interfaces/Fandom';
 import { RequestInit } from 'node-fetch';
+import { UncompleteModelLoader } from '../UncompleteModel';
+import { UncompleteModelSet } from '../UncompleteModelSet';
 import { Wiki } from '../Wiki';
 
-export class FandomWiki extends Wiki {
-	public static readonly COMPONENTS_MERCURYWIKIVARIABLES = [ 'articlepath', 'id', 'lang', 'name', 'scriptpath', 'server', 'vertical' ];
-	public static readonly COMPONENTS_WIKIDETAILS = [ 'founder', 'foundingdate', 'lang', 'name', 'server', 'vertical' ];
-	public static readonly COMPONENTS = uniqueArray( Wiki.COMPONENTS, FandomWiki.COMPONENTS_MERCURYWIKIVARIABLES, FandomWiki.COMPONENTS_WIKIDETAILS );
+interface FandomWiki {
+	registerLoader( ...loader : UncompleteModelLoader<FandomWiki>[] ) : void;
+};
 
+class FandomWiki extends Wiki {
 	public readonly network : Fandom;
 
 	public founder? : FandomUser;
@@ -49,50 +50,6 @@ export class FandomWiki extends Wiki {
 		return new FandomUserSet( names.map( e => this.getUser( e ) ) );
 	}
 
-	protected async __load( components : string[] ) : Promise<void> {
-		const loadWikiDetails = components.find( e => FandomWiki.COMPONENTS_WIKIDETAILS.includes( e ) )
-		if ( !this.id && loadWikiDetails ) {
-			components.push( 'id' );
-		}
-
-		if ( components.find( e => FandomWiki.COMPONENTS_MERCURYWIKIVARIABLES.includes( e ) ) ) {
-			const mwv = await this.getMercuryWikiVariables();
-
-			this.articlepath = mwv.articlePath + '$1';
-			this.id = mwv.id;
-			this.lang = mwv.language.content;
-			this.name = mwv.siteName;
-			this.server = mwv.basePath;
-			this.scriptpath = mwv.scriptPath;
-			this.vertical = mwv.vertical;
-
-			this.setLoaded( FandomWiki.COMPONENTS_MERCURYWIKIVARIABLES );
-			components = components.filter( e => !FandomWiki.COMPONENTS_MERCURYWIKIVARIABLES.includes( e ) );
-		}
-
-		if ( this.id && loadWikiDetails ) {
-			const details = ( await this.network.getWikiDetails( this.id ) )[this.id];
-
-			const founderID = Number.parseInt( details.founding_user_id );
-			if ( founderID >= 0 ) {
-				this.founder = this.getUser( founderID );
-			}
-
-			this.foundingdate = details.creation_date;
-			this.lang = details.lang;
-			this.name = details.name;
-			this.server = `https://${ details.domain }`;
-			this.vertical = details.hub;
-
-			this.setLoaded( FandomWiki.COMPONENTS_WIKIDETAILS );
-			components = components.filter( e => !FandomWiki.COMPONENTS_WIKIDETAILS.includes( e ) );
-		}
-
-		if ( components.length ) {
-			return super.__load( components );
-		}
-	}
-
 	public clear() : void {
 		this.id = undefined;
 		this.lang = undefined;
@@ -101,3 +58,60 @@ export class FandomWiki extends Wiki {
 		super.clear();
 	}
 };
+
+class FandomWikiSet extends UncompleteModelSet<FandomWiki> {
+};
+
+export { FandomWiki, FandomWikiSet };
+
+// MercuryWikiVariables loader
+const FandomWikiMWVLoader = {
+	components: [ 'articlepath', 'id', 'lang', 'name', 'scriptpath', 'server', 'vertical' ],
+	async load( wiki : FandomWiki ) {
+		const mwv = await wiki.getMercuryWikiVariables();
+
+		wiki.articlepath = mwv.articlePath + '$1';
+		wiki.id = mwv.id;
+		wiki.lang = mwv.language.content;
+		wiki.name = mwv.siteName;
+		wiki.server = mwv.basePath;
+		wiki.scriptpath = mwv.scriptPath;
+		wiki.vertical = mwv.vertical;
+
+		wiki.setLoaded( this.components );
+	}
+};
+
+// WikiDetails loader
+const FandomWikiWDLoader = {
+	components: [ 'founder', 'foundingdate', 'lang', 'name', 'server', 'vertical' ],
+	dependencies: [ 'id' ],
+	async load( set : FandomWiki|FandomWikiSet ) {
+		const models : FandomWiki[] = set instanceof FandomWiki ? [ set ] : set.models;
+		const ids : number[] = models.map( e => e.id ).filter( e => e !== undefined ) as number[];
+
+		const result = ( await models[0].network.getWikiDetails( ids ) );
+
+		for ( const _id in result ) {
+			const id = Number.parseInt( _id );
+			const details = result[_id];
+
+			const wiki = models.find( e => e.id === id );
+			if ( wiki ) {
+				const founderID = Number.parseInt( details.founding_user_id );
+				if ( founderID >= 0 ) {
+					wiki.founder = wiki.getUser( founderID );
+				}
+
+				wiki.foundingdate = details.creation_date;
+				wiki.lang = details.lang;
+				wiki.name = details.name;
+				wiki.server = `https://${ details.domain }`;
+				wiki.vertical = details.hub;
+			}
+		}
+	}
+};
+
+FandomWiki.registerLoader( ...Wiki.LOADERS, FandomWikiMWVLoader, FandomWikiWDLoader );
+FandomWikiSet.registerLoader( FandomWikiWDLoader );

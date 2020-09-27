@@ -1,5 +1,4 @@
-import { FandomUser } from './FandomUser';
-import { FandomUserSet } from './FandomUserSet';
+import { FandomUser, FandomUserSet } from './FandomUser';
 import { FandomWiki } from './FandomWiki';
 import { FetchManager, FetchManagerOptions } from '../../util/FetchManager';
 import { RequestInit } from 'node-fetch';
