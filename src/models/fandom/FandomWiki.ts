@@ -99,7 +99,7 @@ const FandomWikiWDLoader = {
 			const wiki = models.find( e => e.id === id );
 			if ( wiki ) {
 				const founderID = Number.parseInt( details.founding_user_id );
-				if ( founderID >= 0 ) {
+				if ( founderID > 0 ) {
 					wiki.founder = wiki.getUser( founderID );
 				}
 
