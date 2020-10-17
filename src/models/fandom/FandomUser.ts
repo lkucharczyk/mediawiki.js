@@ -1,6 +1,7 @@
 import { Fandom } from './Fandom';
 import { FandomWiki } from './FandomWiki';
 import { WikiUser, WikiUserSet } from '../WikiUser';
+import { chunkArray } from '../../util/util';
 
 interface FandomUser extends WikiUser {
 	wiki : FandomWiki;
@@ -27,16 +28,19 @@ const FandomUserLoader = {
 	dependencies: [ 'id' ],
 	async load( set : FandomUser|FandomUserSet ) {
 		const models = set instanceof FandomUser ? [ set ] : set.models;
+		const chunks = chunkArray( models.map( e => e.id as number ), 100 );
 
-		const res = await models[0].network.getUserDetails( models.map( e => e.id ) as number[] );
-		for ( const user of res ) {
-			for ( const model of models ) {
-				if ( model.id === user.user_id || model.name === user.name ) {
-					model.name = user.name;
-					model.avatar = user.avatar;
+		return Promise.all( chunks.map( e => models[0].network.getUserDetails( e ) ) ).then( res => {
+			for ( const result of res ) {
+				for ( const user of result ) {
+					const model = models.find( e => e.id === user.user_id );
+					if ( model ) {
+						model.name = user.name;
+						model.avatar = user.avatar;
+					}
 				}
 			}
-		}
+		} );
 	}
 }
 

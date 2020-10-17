@@ -1,7 +1,7 @@
 import { Fandom } from './Fandom';
 import { FandomUser, FandomUserSet } from './FandomUser';
-import { FetchManager, FetchManagerOptions } from '../../util/util';
-import { MercuryWikiVariables, MercuryWikiVariablesResult, NirvanaResult } from '../../interfaces/Fandom';
+import { chunkArray, FetchManager, FetchManagerOptions } from '../../util/util';
+import { MercuryWikiVariables, MercuryWikiVariablesResult, NirvanaResult, WikiDetails } from '../../interfaces/Fandom';
 import { RequestInit } from 'node-fetch';
 import { UncompleteModelLoader } from '../UncompleteModel';
 import { UncompleteModelSet } from '../UncompleteModelSet';
@@ -87,29 +87,31 @@ const FandomWikiWDLoader = {
 	components: [ 'founder', 'foundingdate', 'lang', 'name', 'server', 'vertical' ],
 	dependencies: [ 'id' ],
 	async load( set : FandomWiki|FandomWikiSet ) {
-		const models : FandomWiki[] = set instanceof FandomWiki ? [ set ] : set.models;
-		const ids : number[] = models.map( e => e.id ).filter( e => e !== undefined ) as number[];
+		const models = set instanceof FandomWiki ? [ set ] : set.models;
+		const ids = chunkArray( models.map( e => e.id ).filter( e => e !== undefined ) as number[], 250 );
 
-		const result = ( await models[0].network.getWikiDetails( ids ) );
+		return Promise.all( ids.map( e => models[0].network.getWikiDetails( e ) ) ).then( res => {
+			for ( const result of res ) {
+				for ( const _id in result ) {
+					const id = Number.parseInt( _id );
+					const details = result[_id];
 
-		for ( const _id in result ) {
-			const id = Number.parseInt( _id );
-			const details = result[_id];
+					const wiki = models.find( e => e.id === id );
+					if ( wiki ) {
+						const founderID = Number.parseInt( details.founding_user_id );
+						if ( founderID > 0 ) {
+							wiki.founder = wiki.getUser( founderID );
+						}
 
-			const wiki = models.find( e => e.id === id );
-			if ( wiki ) {
-				const founderID = Number.parseInt( details.founding_user_id );
-				if ( founderID > 0 ) {
-					wiki.founder = wiki.getUser( founderID );
+						wiki.foundingdate = details.creation_date;
+						wiki.lang = details.lang;
+						wiki.name = details.name;
+						wiki.server = `https://${ details.domain }`;
+						wiki.vertical = details.hub;
+					}
 				}
-
-				wiki.foundingdate = details.creation_date;
-				wiki.lang = details.lang;
-				wiki.name = details.name;
-				wiki.server = `https://${ details.domain }`;
-				wiki.vertical = details.hub;
 			}
-		}
+		} );
 	}
 };
 

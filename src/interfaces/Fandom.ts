@@ -57,6 +57,7 @@ export interface UserDetailsResult extends NirvanaResult {
 
 export interface WikiDetails {
 	id : number;
+	url : string;
 	wordmark : string;
 	title : string;
 	stats : {
