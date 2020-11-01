@@ -123,6 +123,10 @@ export class Wiki extends UncompleteModel {
 	public getUsers( names : (string|number)[] ) : WikiUserSet {
 		return new WikiUserSet( names.map( e => this.getUser( e ) ) );
 	}
+
+	get url() : string {
+		return this.entrypoint;
+	};
 };
 
 Wiki.registerLoader( {

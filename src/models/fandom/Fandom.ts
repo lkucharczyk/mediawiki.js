@@ -30,7 +30,7 @@ class Fandom extends WikiNetwork {
 		this.getUsers = this.central.getUsers.bind( this.central );
 	}
 
-	public getWiki( wiki : string ) : FandomWiki {
+	public static normalizeURL( wiki : string ) : string {
 		let url;
 		try {
 			url = new URL( !wiki.startsWith( 'http://' ) && !wiki.startsWith( 'https://' ) ? `https://${wiki}` : wiki );
@@ -44,15 +44,19 @@ class Fandom extends WikiNetwork {
 				entrypoint += `/${path[1]}`;
 			}
 
-			return new FandomWiki( this, entrypoint, this.fetchManager, this.requestOptions );
+			return entrypoint;
 		}
 
 		const match = wiki.match( Fandom.REGEXP_WIKI );
 		if ( match ) {
-			return new FandomWiki( this, `https://${match[2]}.fandom.com${match[1] ? `/${match[1]}` : ''}`, this.fetchManager, this.requestOptions );
+			return `https://${match[2]}.fandom.com${match[1] ? `/${match[1]}` : ''}`;
 		}
 
 		throw new Error( 'Specified wiki is not on the Fandom network.' );
+	}
+
+	public getWiki( wiki : string ) : FandomWiki {
+		return new FandomWiki( this, Fandom.normalizeURL( wiki ), this.fetchManager, this.requestOptions );
 	}
 
 	public async getUserDetails( ids : number|number[] ) : Promise<UserDetails[]> {

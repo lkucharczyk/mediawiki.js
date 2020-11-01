@@ -135,4 +135,27 @@ export abstract class UncompleteModel {
 	public clear() : void {
 		this.#loaded = [];
 	}
+
+	public fromJSON( data : Partial<this> ) : this {
+		for ( const prop in data ) {
+			if ( data[prop] && typeof data[prop] !== 'function' && ( this.constructor as typeof UncompleteModel ).COMPONENTS.includes( prop ) ) {
+				this[prop] = data[prop] as any;
+				this.setLoaded( prop );
+			}
+		}
+
+		return this;
+	}
+
+	public toJSON() : any {
+		const out : any = {};
+
+		for ( const prop in this ) {
+			if ( typeof this[prop] !== 'object' && typeof this[prop] !== 'function' ) {
+				out[prop] = this[prop];
+			}
+		}
+
+		return out;
+	}
 };

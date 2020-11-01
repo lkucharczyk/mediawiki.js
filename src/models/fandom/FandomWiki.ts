@@ -57,6 +57,16 @@ class FandomWiki extends Wiki {
 
 		super.clear();
 	}
+
+	public toJSON() : any {
+		const out : any = super.toJSON();
+
+		if ( this.founder && this.founder.id ) {
+			out.founder = this.founder.id
+		}
+
+		return out;
+	}
 };
 
 class FandomWikiSet extends UncompleteModelSet<FandomWiki> {
