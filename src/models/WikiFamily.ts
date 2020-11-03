@@ -28,9 +28,12 @@ export class WikiFamily {
 	#missingLinks : MappedArrays<Wiki> = new MappedArrays();
 	#linkedBy : MappedArrays<Wiki> = new MappedArrays();
 
+	protected wikiCache : { [ url : string ] : Wiki };
+
 	public constructor( base : Wiki, strict : boolean = true ) {
 		this.base = base;
 		this.strict = strict;
+		this.wikiCache = { [this.base.url]: this.base };
 	}
 
 	public async load() : Promise<this> {
@@ -41,19 +44,15 @@ export class WikiFamily {
 		return this.#loader;
 	}
 
-	protected async __load() : Promise<this> {
-		const cache : { [ url : string ] : Wiki } = {
-			[this.base.url]: this.base
-		};
-
-		function getWiki( url : string ) : Wiki {
-			if ( !( url in cache ) ) {
-				cache[url] = new Wiki( url );
-			}
-
-			return cache[url];
+	protected getWiki( url : string ) : Wiki {
+		if ( !( url in this.wikiCache ) ) {
+			this.wikiCache[url] = new Wiki( url );
 		}
 
+		return this.wikiCache[url];
+	}
+
+	protected async __load() : Promise<this> {
 		const queue = [ this.base ];
 
 		while ( queue.length ) {
@@ -67,7 +66,7 @@ export class WikiFamily {
 					continue;
 				}
 
-				const target = getWiki( interwiki.api ?? interwiki.url ) as Loaded<Wiki, 'interwikimap'|'lang'>;
+				const target = this.getWiki( interwiki.api ?? interwiki.url ) as Loaded<Wiki, 'interwikimap'|'lang'>;
 				target.family = this;
 
 				if ( interwiki.prefix === source.lang ) {

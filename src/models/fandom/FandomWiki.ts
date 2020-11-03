@@ -6,6 +6,7 @@ import { RequestInit } from 'node-fetch';
 import { UncompleteModelLoader } from '../UncompleteModel';
 import { UncompleteModelSet } from '../UncompleteModelSet';
 import { Wiki } from '../Wiki';
+import { FandomFamily } from './FandomFamily';
 
 interface FandomWiki {
 	registerLoader( ...loader : UncompleteModelLoader<FandomWiki>[] ) : void;
@@ -13,6 +14,7 @@ interface FandomWiki {
 
 class FandomWiki extends Wiki {
 	public readonly network : Fandom;
+	public family? : FandomFamily;
 
 	public founder? : FandomUser;
 	public foundingdate? : string;
@@ -40,6 +42,14 @@ class FandomWiki extends Wiki {
 		}
 
 		return this.#mercuryWikiVariables;
+	}
+
+	public getFamily( strict : boolean = true ) : FandomFamily {
+		if ( !this.family ) {
+			this.family = new FandomFamily( this, strict );
+		}
+
+		return this.family;
 	}
 
 	public getUser( name : string|number ) : FandomUser {

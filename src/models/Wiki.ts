@@ -107,14 +107,6 @@ export class Wiki extends UncompleteModel {
 		} );
 	}
 
-	public getFamily( strict : boolean = true ) : WikiFamily {
-		if ( !this.family ) {
-			this.family = new WikiFamily( this, strict );
-		}
-
-		return this.family;
-	}
-
 	public async getEditToken() : Promise<string> {
 		const res = await this.callApi<ApiQueryToken>( {
 			action: 'query',
@@ -140,6 +132,14 @@ export class Wiki extends UncompleteModel {
 			: `${ this.url }/$1`;
 
 		return encodeURI( base.replace( '$1', path ) ) + ( params ? `?${( new URLSearchParams( params ) ).toString()}` : '' );
+	}
+
+	public getFamily( strict : boolean = true ) : WikiFamily {
+		if ( !this.family ) {
+			this.family = new WikiFamily( this, strict );
+		}
+
+		return this.family;
 	}
 
 	public getUser( name : string|number ) : WikiUser {
