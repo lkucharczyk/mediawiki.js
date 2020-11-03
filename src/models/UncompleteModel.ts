@@ -1,16 +1,18 @@
 import { UncompleteModelSet } from './UncompleteModelSet';
 
+export type Loaded<T, U extends keyof T> = T & Required<Pick<T, U>>;
+
 export interface UncompleteModelLoader<T extends UncompleteModel = UncompleteModel> {
 	components : string[];
 	dependencies? : string[];
-	load : ( ( model : T ) => Promise<void> ) | ( ( model : T|UncompleteModelSet<T> ) => Promise<void> );
+	load : ( ( model : T, components : string[] ) => Promise<any> ) | ( ( model : T|UncompleteModelSet<T>, components : string[] ) => Promise<any> );
 };
 
 export abstract class UncompleteModel {
 	public static COMPONENTS : string[] = [];
 	public static LOADERS : UncompleteModelLoader[] = [];
 
-	#loading : { [component : string] : Promise<void> } = {};
+	#loading : { [component : string] : Promise<any> } = {};
 	#loaded : string[] = [];
 
 	public async load( ...components : string[] ) : Promise<this> {
@@ -40,9 +42,9 @@ export abstract class UncompleteModel {
 				if ( components.find( e => loader.components.includes( e ) ) ) {
 					let promise : Promise<any>;
 					if ( loader.dependencies ) {
-						promise = this.load( ...loader.dependencies ).then( () => loader.load( this ) );
+						promise = this.load( ...loader.dependencies ).then( () => loader.load( this, components ) );
 					} else {
-						promise = loader.load( this );
+						promise = loader.load( this, components );
 					}
 
 					promises.push( promise );
@@ -52,19 +54,17 @@ export abstract class UncompleteModel {
 			}
 		}
 
-		await Promise.all( promises );
-
-		return this;
+		return Promise.all( promises ).then( () => this );
 	}
 
-	public addLoading( components : string|string[], promise : Promise<void> ) : void {
+	public addLoading( components : string|string[], promise : Promise<any> ) : void {
 		const constructor = this.constructor as typeof UncompleteModel;
 
 		if ( !Array.isArray( components ) ) {
 			components = [ components ];
 		}
 
-		promise.then( () => this.setLoaded( components ) );
+		promise.then( () => this.setLoaded( components ) ).catch( e => false );
 
 		for ( const component of components ) {
 			if ( constructor.COMPONENTS.includes( component ) ) {

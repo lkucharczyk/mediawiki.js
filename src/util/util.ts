@@ -13,3 +13,36 @@ export function chunkArray<T>( array : T[], chunk : number ) : T[][] {
 export function uniqueArray<T>( ...arrays : T[][] ) : T[] {
 	return Array.from( new Set( arrays.flat() ) );
 };
+
+
+export class MappedArrays<T> {
+	#object : { [ key : string ] : T[] } = {};
+
+	raw() {
+		return this.#object;
+	}
+
+	keys() {
+		return Object.keys( this.#object );
+	}
+
+	has( key : string ) : boolean {
+		return key in this.#object;
+	}
+
+	get( key : string ) : T[] {
+		return this.#object[key] ?? [];
+	}
+
+	push( key : string, item : T ) : number {
+		if ( !( key in this.#object ) ) {
+			this.#object[key] = [];
+		}
+
+		return this.#object[key].includes( item ) ? -1 : this.#object[key].push( item );
+	}
+
+	length( key : string ) : number {
+		return this.get( key ).length;
+	}
+};

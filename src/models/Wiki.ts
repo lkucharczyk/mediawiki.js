@@ -4,45 +4,63 @@ import {
 	ApiQuerySiteinfoResult,
 	ApiQueryStatisticsResult,
 	ApiQueryToken,
-	ApiResult
+	ApiResult,
+	Interwiki
 } from '../interfaces/Api';
 import { FetchManager, FetchManagerOptions } from '../util/FetchManager';
 import { RequestInit, Response } from 'node-fetch';
 import { UncompleteModel } from './UncompleteModel';
 import { UncompleteModelSet } from './UncompleteModelSet';
+import { WikiFamily } from './WikiFamily';
 import { WikiNetwork } from './WikiNetwork';
 import { WikiUser, WikiUserSet } from './WikiUser';
 
 export class Wiki extends UncompleteModel {
 	public readonly entrypoint : string;
+	public family? : WikiFamily;
 	public network? : WikiNetwork;
 	public requestOptions : RequestInit;
 
 	public articlepath? : string;
 	public generator? : string;
+	public interwikimap? : Interwiki[];
 	public lang? : string;
 	public name? : string;
 	public server? : string;
 	public scriptpath? : string;
+	public url : string;
 
 	protected readonly fetchManager : FetchManager;
 
 	/** @param entrypoint api.php entry point */
 	public constructor( entrypoint : string, fetchManager? : FetchManager|FetchManagerOptions, requestOptions? : RequestInit ) {
-		if ( entrypoint.endsWith( '.php' ) || entrypoint.endsWith( '/$1' ) || entrypoint.endsWith( '/' ) ) {
-			entrypoint = entrypoint.substring( 0, entrypoint.lastIndexOf( '/' ) );
-		}
-
-		if ( entrypoint.endsWith( '/wiki' ) || entrypoint.endsWith( '/w' ) ) {
-			entrypoint = entrypoint.substring( 0, entrypoint.lastIndexOf( '/' ) );
-		}
-
 		super();
-		this.entrypoint = entrypoint;
+		this.entrypoint = Wiki.normalizeURL( entrypoint );
+		this.url = this.entrypoint;
 		this.fetchManager = fetchManager instanceof FetchManager
 			? fetchManager
 			: new FetchManager( Object.assign( { name: entrypoint }, fetchManager ) );
 		this.requestOptions = requestOptions ?? {};
+	}
+
+	public static normalizeURL( url : string ) : string {
+		if ( url.includes( '?' ) ) {
+			url = url.substring( 0, url.lastIndexOf( '?' ) );
+		}
+
+		if ( url.includes( '#' ) ) {
+			url = url.substring( 0, url.lastIndexOf( '#' ) );
+		}
+
+		if ( url.endsWith( '.php' ) || url.endsWith( '/$1' ) || url.endsWith( '/' ) ) {
+			url = url.substring( 0, url.lastIndexOf( '/' ) );
+		}
+
+		if ( /\/w(iki)?(\/.*)?$/.test( url ) ) {
+			url = url.replace( /\/w(iki)?(\/.*)?$/, '' );
+		}
+
+		return url;
 	}
 
 	public async call( path? : string, params? : Record<string, string>, options? : RequestInit ) : Promise<Response> {
@@ -89,6 +107,14 @@ export class Wiki extends UncompleteModel {
 		} );
 	}
 
+	public getFamily( strict : boolean = true ) : WikiFamily {
+		if ( !this.family ) {
+			this.family = new WikiFamily( this, strict );
+		}
+
+		return this.family;
+	}
+
 	public async getEditToken() : Promise<string> {
 		const res = await this.callApi<ApiQueryToken>( {
 			action: 'query',
@@ -103,7 +129,7 @@ export class Wiki extends UncompleteModel {
 	getURL( path = '', params? : any ) : string {
 		const base : string = this.scriptpath && this.server
 			? this.server + this.scriptpath
-			: this.entrypoint;
+			: this.url;
 
 		return encodeURI( `${ base }/${ path }` ) + ( params ? `?${( new URLSearchParams( params ) ).toString()}` : '' );
 	}
@@ -111,7 +137,7 @@ export class Wiki extends UncompleteModel {
 	getWikiURL( path = '', params? : any ) : string {
 		const base : string = this.articlepath && this.server
 			? this.server + this.articlepath
-			: `${ this.entrypoint }/$1`;
+			: `${ this.url }/$1`;
 
 		return encodeURI( base.replace( '$1', path ) ) + ( params ? `?${( new URLSearchParams( params ) ).toString()}` : '' );
 	}
@@ -123,26 +149,29 @@ export class Wiki extends UncompleteModel {
 	public getUsers( names : (string|number)[] ) : WikiUserSet {
 		return new WikiUserSet( names.map( e => this.getUser( e ) ) );
 	}
-
-	get url() : string {
-		return this.entrypoint;
-	};
 };
 
 Wiki.registerLoader( {
-	components: [ 'articlepath', 'generator', 'lang', 'name', 'server', 'scriptpath' ],
-	async load( set : Wiki|UncompleteModelSet<Wiki> ) {
+	components: [ 'articlepath', 'generator', 'interwikimap', 'lang', 'name', 'server', 'scriptpath', 'url' ],
+	async load( set : Wiki|UncompleteModelSet<Wiki>, components : string[] ) {
 		const models : Wiki[] = set instanceof Wiki ? [ set ] : set.models;
+		const loadIWMap = components.includes( 'interwikimap' );
 
-		for ( const model of models ) {
-			const si = ( await model.getSiteinfo( [ 'general' ] ) ).query.general;
+		return Promise.all( models.map( model =>
+			model.getSiteinfo( loadIWMap ? [ 'general', 'interwikimap' ] : [ 'general' ] )
+				.then( si => {
+					if ( loadIWMap ) {
+						model.interwikimap = si.query.interwikimap;
+					}
 
-			model.articlepath = si.articlepath;
-			model.generator = si.generator;
-			model.lang = si.lang;
-			model.name = si.sitename;
-			model.server = si.server;
-			model.scriptpath = si.scriptpath;
-		}
+					model.articlepath = si.query.general.articlepath;
+					model.generator = si.query.general.generator;
+					model.lang = si.query.general.lang;
+					model.name = si.query.general.sitename;
+					model.server = si.query.general.server;
+					model.scriptpath = si.query.general.scriptpath;
+					model.url = Wiki.normalizeURL( si.query.general.base );
+				} )
+		) );
 	}
 } );

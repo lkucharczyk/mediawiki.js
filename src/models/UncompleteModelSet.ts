@@ -3,7 +3,7 @@ import { UncompleteModel, UncompleteModelLoader } from './UncompleteModel';
 export interface UncompleteModelSetLoader<T extends UncompleteModel = UncompleteModel> extends UncompleteModelLoader<T> {
 	components : string[];
 	dependencies? : string[];
-	load( set : T|UncompleteModelSet<T> ) : Promise<void>;
+	load( set : T|UncompleteModelSet<T>, components : string[] ) : Promise<void>;
 };
 
 interface UncompleteModelSet<T extends UncompleteModel> {
@@ -35,9 +35,9 @@ class UncompleteModelSet<T extends UncompleteModel> {
 
 					let promise : Promise<any>;
 					if ( loader.dependencies ) {
-						promise = this.load( ...loader.dependencies ).then( () => loader.load( this ) );
+						promise = this.load( ...loader.dependencies ).then( () => loader.load( this, components ) );
 					} else {
-						promise = loader.load( this );
+						promise = loader.load( this, components );
 					}
 
 					promises.push( promise );
