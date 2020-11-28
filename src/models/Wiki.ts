@@ -5,6 +5,7 @@ import {
 	ApiQueryStatisticsResult,
 	ApiQueryToken,
 	ApiResult,
+	ApiStatistics,
 	Interwiki
 } from '../interfaces/Api';
 import { FetchManager, FetchManagerOptions } from '../util/FetchManager';
@@ -28,6 +29,7 @@ export class Wiki extends UncompleteModel {
 	public name? : string;
 	public server? : string;
 	public scriptpath? : string;
+	public statistics? : ApiStatistics;
 	public url : string;
 
 	protected readonly fetchManager : FetchManager;
@@ -131,7 +133,7 @@ export class Wiki extends UncompleteModel {
 			? this.server + this.articlepath
 			: `${ this.url }/$1`;
 
-		return encodeURI( base.replace( '$1', path ) ) + ( params ? `?${( new URLSearchParams( params ) ).toString()}` : '' );
+		return encodeURI( base.replace( '$1', encodeURIComponent( path.replace( / /g, '_' ) ) ) ) + ( params ? `?${( new URLSearchParams( params ) ).toString()}` : '' );
 	}
 
 	public getFamily( strict : boolean = true ) : WikiFamily {
@@ -152,16 +154,26 @@ export class Wiki extends UncompleteModel {
 };
 
 Wiki.registerLoader( {
-	components: [ 'articlepath', 'generator', 'interwikimap', 'lang', 'name', 'server', 'scriptpath', 'url' ],
+	components: [ 'articlepath', 'generator', 'interwikimap', 'lang', 'name', 'server', 'scriptpath', 'statistics', 'url' ],
 	async load( set : Wiki|UncompleteModelSet<Wiki>, components : string[] ) {
 		const models : Wiki[] = set instanceof Wiki ? [ set ] : set.models;
-		const loadIWMap = components.includes( 'interwikimap' );
+
+		const load : ApiQuerySiteinfoProp[] = [ 'general' ];
+		if ( components.includes( 'interwikimap' ) ) {
+			load.push( 'interwikimap' );
+		}
+		if ( components.includes( 'statistics' ) ) {
+			load.push( 'statistics' );
+		}
 
 		return Promise.all( models.map( model =>
-			model.getSiteinfo( loadIWMap ? [ 'general', 'interwikimap' ] : [ 'general' ] )
+			model.getSiteinfo( load )
 				.then( si => {
-					if ( loadIWMap ) {
+					if ( components.includes( 'interwikimap' ) ) {
 						model.interwikimap = si.query.interwikimap;
+					}
+					if ( components.includes( 'statistics' ) ) {
+						model.statistics = si.query.statistics;
 					}
 
 					model.articlepath = si.query.general.articlepath;
@@ -170,7 +182,7 @@ Wiki.registerLoader( {
 					model.name = si.query.general.sitename;
 					model.server = si.query.general.server;
 					model.scriptpath = si.query.general.scriptpath;
-					model.url = Wiki.normalizeURL( si.query.general.base );
+					model.url = Wiki.normalizeURL( model.server + model.scriptpath );
 				} )
 		) );
 	}

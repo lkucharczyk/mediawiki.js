@@ -44,19 +44,21 @@ export interface ApiQueryInterwikiMapResult extends ApiResult {
 	}
 };
 
+export interface ApiStatistics {
+	activeusers : number;
+	admins : number;
+	articles : number;
+	edits : number;
+	images : number;
+	jobs : number;
+	pages : number;
+	users : number;
+};
+
 export interface ApiQueryStatisticsResult extends ApiResult {
 	query : {
-		statistics : {
-			activeusers : number;
-			admins : number;
-			articles : number;
-			edits : number;
-			images : number;
-			jobs : number;
-			pages : number;
-			users : number;
-		}
-	}
+		statistics : ApiStatistics;
+	};
 };
 
 export interface ApiQueryToken extends ApiResult {

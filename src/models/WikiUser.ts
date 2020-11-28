@@ -29,7 +29,7 @@ export class WikiUser extends UncompleteModel {
 
 	public async getURL( params? : Record<string, string> ) : Promise<string> {
 		await this.load( 'name' );
-		return this.wiki.getWikiURL( `User:${ encodeURIComponent( this.name ) }`, params );
+		return this.wiki.getWikiURL( `User:${ this.name }`, params );
 	}
 
 	public clear() : void {

@@ -138,7 +138,7 @@ export abstract class UncompleteModel {
 
 	public fromJSON( data : Partial<this> ) : this {
 		for ( const prop in data ) {
-			if ( data[prop] && typeof data[prop] !== 'function' && ( this.constructor as typeof UncompleteModel ).COMPONENTS.includes( prop ) ) {
+			if ( data.hasOwnProperty( prop ) && typeof data[prop] !== 'function' && ( this.constructor as typeof UncompleteModel ).COMPONENTS.includes( prop ) ) {
 				this[prop] = data[prop] as any;
 				this.setLoaded( prop );
 			}
