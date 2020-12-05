@@ -16,7 +16,7 @@ interface Fandom extends WikiNetwork {
 };
 
 class Fandom extends WikiNetwork {
-	public static readonly REGEXP_DOMAIN = /\.(?:fandom\.com|\wikia\.(?:com|org))$/
+	public static readonly REGEXP_DOMAIN = /\.(?:fandom\.com|gamepedia\.com|\wikia\.(?:com|org))$/
 	public static readonly REGEXP_LANG = /^[a-z]{2}(?:-[a-z]{2,})?$/
 	public static readonly REGEXP_WIKI = /^(?:([a-z]{2}(?:-[a-z]{2,})?)\.)?([a-z0-9-_]+)$/
 

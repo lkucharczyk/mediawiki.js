@@ -133,7 +133,7 @@ export class Wiki extends UncompleteModel {
 			? this.server + this.articlepath
 			: `${ this.url }/$1`;
 
-		return encodeURI( base.replace( '$1', encodeURIComponent( path.replace( / /g, '_' ) ) ) ) + ( params ? `?${( new URLSearchParams( params ) ).toString()}` : '' );
+		return base.replace( '$1', encodeURIComponent( path.replace( / /g, '_' ) ) ) + ( params ? `?${( new URLSearchParams( params ) ).toString()}` : '' );
 	}
 
 	public getFamily( strict : boolean = true ) : WikiFamily {
