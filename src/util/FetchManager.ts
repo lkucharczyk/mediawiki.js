@@ -21,6 +21,7 @@ interface QueuedRequest {
 	url : string,
 	options? : RequestInit,
 	resolve : ( result : Response ) => void
+	reject : ( error : Error ) => void
 };
 
 export class FetchManager implements FetchManagerOptionsRequired {
@@ -57,11 +58,12 @@ export class FetchManager implements FetchManagerOptionsRequired {
 	}
 
 	public queue( url : string, options? : RequestInit ) : Promise<Response> {
-		return new Promise( resolve => {
+		return new Promise( ( resolve, reject ) => {
 			this.#queue.push( {
 				url,
 				options,
-				resolve
+				resolve,
+				reject
 			} );
 			this.log( FetchManager.VERBOSE_INFO, 'Queued', url, options );
 			this.process();
@@ -79,7 +81,7 @@ export class FetchManager implements FetchManagerOptionsRequired {
 		let request;
 		while ( request = this.#queue.pop() ) {
 			this.log( FetchManager.VERBOSE_DEBUG, 'Requested', request.url );
-			request.resolve( await this.fetch( request.url, request.options ) );
+			await this.fetch( request.url, request.options ).then( request.resolve, request.reject );
 			this.log( FetchManager.VERBOSE_INFO, 'Received', request.url );
 			await this.wait();
 		}

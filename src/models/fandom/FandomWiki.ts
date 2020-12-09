@@ -1,7 +1,7 @@
 import { Fandom } from './Fandom';
 import { FandomUser, FandomUserSet } from './FandomUser';
 import { chunkArray, FetchManager, FetchManagerOptions } from '../../util/util';
-import { MercuryWikiVariables, MercuryWikiVariablesResult, NirvanaResult, WikiDetails } from '../../interfaces/Fandom';
+import { MercuryWikiVariables, MercuryWikiVariablesResult, NirvanaResult } from '../../interfaces/Fandom';
 import { RequestInit } from 'node-fetch';
 import { UncompleteModelLoader } from '../UncompleteModel';
 import { UncompleteModelSet } from '../UncompleteModelSet';
@@ -21,8 +21,6 @@ class FandomWiki extends Wiki {
 	public id? : number;
 	public vertical? : string;
 
-	#mercuryWikiVariables? : MercuryWikiVariables;
-
 	constructor( network : Fandom, entrypoint : string, fetchManager? : FetchManager|FetchManagerOptions, requestOptions? : RequestInit ) {
 		super( entrypoint, fetchManager, requestOptions );
 		this.network = network;
@@ -30,18 +28,14 @@ class FandomWiki extends Wiki {
 
 	public async callNirvana<T extends NirvanaResult = NirvanaResult>( params : Record<string, string> & { controller : string, method? : string }, options? : RequestInit ) : Promise<T> {
 		params.format = 'json';
-		return ( await this.call( 'wikia.php', params, options ) ).json();
+		return this.call( 'wikia.php', params, options ).then( e => e.json() );
 	}
 
 	public async getMercuryWikiVariables() : Promise<MercuryWikiVariables> {
-		if ( !this.#mercuryWikiVariables ) {
-			this.#mercuryWikiVariables = ( await this.callNirvana<MercuryWikiVariablesResult>( {
-				controller: 'MercuryApiController',
-				method: 'getWikiVariables'
-			} ) ).data;
-		}
-
-		return this.#mercuryWikiVariables;
+		return this.callNirvana<MercuryWikiVariablesResult>( {
+			controller: 'MercuryApiController',
+			method: 'getWikiVariables'
+		} ).then( e => e.data );
 	}
 
 	public getFamily( strict : boolean = true ) : FandomFamily {
@@ -63,7 +57,6 @@ class FandomWiki extends Wiki {
 	public clear() : void {
 		this.id = undefined;
 		this.lang = undefined;
-		this.#mercuryWikiVariables = undefined;
 
 		super.clear();
 	}
@@ -88,17 +81,17 @@ export { FandomWiki, FandomWikiSet };
 const FandomWikiMWVLoader = {
 	components: [ 'articlepath', 'id', 'lang', 'name', 'scriptpath', 'server', 'vertical' ],
 	async load( wiki : FandomWiki ) {
-		const mwv = await wiki.getMercuryWikiVariables();
+		return wiki.getMercuryWikiVariables().then( mwv => {
+			wiki.articlepath = mwv.articlePath + '$1';
+			wiki.id = mwv.id;
+			wiki.lang = mwv.language.content;
+			wiki.name = mwv.siteName;
+			wiki.server = mwv.basePath;
+			wiki.scriptpath = mwv.scriptPath;
+			wiki.vertical = mwv.vertical;
 
-		wiki.articlepath = mwv.articlePath + '$1';
-		wiki.id = mwv.id;
-		wiki.lang = mwv.language.content;
-		wiki.name = mwv.siteName;
-		wiki.server = mwv.basePath;
-		wiki.scriptpath = mwv.scriptPath;
-		wiki.vertical = mwv.vertical;
-
-		wiki.setLoaded( this.components );
+			wiki.setLoaded( this.components );
+		} );
 	}
 };
 
