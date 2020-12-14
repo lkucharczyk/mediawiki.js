@@ -18,11 +18,11 @@
 		"url": "https://github.com/lkucharczyk/mediawiki.js.git"
 	},
 	"dependencies": {
-		"node-fetch": "^2.6.0"
+		"node-fetch": "^2.6.1"
 	},
 	"devDependencies": {
 		"@types/node-fetch": "^2.5.7",
 		"rimraf": "^3.0.2",
-		"typescript": "^4.0.2"
+		"typescript": "^4.1.3"
 	}
 }
