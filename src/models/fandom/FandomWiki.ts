@@ -97,7 +97,7 @@ const FandomWikiMWVLoader = {
 
 // WikiDetails loader
 const FandomWikiWDLoader = {
-	components: [ 'founder', 'foundingdate', 'lang', 'name', 'server', 'vertical' ],
+	components: [ 'lang', 'name', 'server' ],
 	dependencies: [ 'id' ],
 	async load( set : FandomWiki|FandomWikiSet ) {
 		const models = set instanceof FandomWiki ? [ set ] : set.models;
@@ -111,16 +111,9 @@ const FandomWikiWDLoader = {
 
 					const wiki = models.find( e => e.id === id );
 					if ( wiki ) {
-						const founderID = Number.parseInt( details.founding_user_id );
-						if ( founderID > 0 ) {
-							wiki.founder = wiki.getUser( founderID );
-						}
-
-						wiki.foundingdate = details.creation_date;
 						wiki.lang = details.lang;
 						wiki.name = details.name;
-						wiki.server = `https://${ details.domain }`;
-						wiki.vertical = details.hub;
+						wiki.server = details.url;
 					}
 				}
 			}
