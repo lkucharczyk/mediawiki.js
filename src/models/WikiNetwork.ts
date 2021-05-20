@@ -17,3 +17,9 @@ export abstract class WikiNetwork {
 
 	public abstract getWiki( wiki : string ) : Wiki;
 };
+
+export class WikiNotOnNetworkError extends Error {
+	constructor( network : string ) {
+		super( `Specified wiki is not on the ${ network } network.` );
+	}
+};

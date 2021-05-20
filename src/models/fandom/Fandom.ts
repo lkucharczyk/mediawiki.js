@@ -8,7 +8,7 @@ import {
 	WikiDetails,
 	WikiDetailsResult
 } from '../../interfaces/Fandom';
-import { WikiNetwork } from '../WikiNetwork';
+import { WikiNetwork, WikiNotOnNetworkError } from '../WikiNetwork';
 
 interface Fandom extends WikiNetwork {
 	getUser( name : string|number ) : FandomUser;
@@ -52,7 +52,7 @@ class Fandom extends WikiNetwork {
 			return `https://${match[2]}.fandom.com${match[1] ? `/${match[1]}` : ''}`;
 		}
 
-		throw new Error( 'Specified wiki is not on the Fandom network.' );
+		throw new WikiNotOnFandomError();
 	}
 
 	public getWiki( wiki : string ) : FandomWiki {
@@ -85,3 +85,9 @@ class Fandom extends WikiNetwork {
 };
 
 export { Fandom };
+
+export class WikiNotOnFandomError extends WikiNotOnNetworkError {
+	constructor() {
+		super( 'Fandom' );
+	}
+};

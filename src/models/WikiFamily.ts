@@ -1,12 +1,13 @@
-import { ApiQueryInterwikiMapResult, ApiQuerySiteinfoResult } from '../interfaces/Api';
 import { MappedArrays } from '../util/util';
 import { Loaded } from './UncompleteModel';
 import { Wiki } from './Wiki';
+import { WikiNotOnNetworkError } from './WikiNetwork';
 
 export enum FamilyInvalidConnectionReason {
 	CONFLICT,
 	DOESNT_EXIST,
 	LANG_MISMATCH,
+	NOT_ON_NETWORK,
 	SAME_LANG
 };
 
@@ -66,59 +67,72 @@ export class WikiFamily {
 					continue;
 				}
 
-				const target = this.getWiki( interwiki.api ?? interwiki.url ) as Loaded<Wiki, 'interwikimap'|'lang'>;
-				target.family = this;
+				try {
+					const target = this.getWiki( interwiki.api ?? interwiki.url ) as Loaded<Wiki, 'interwikimap'|'lang'>;
+					target.family = this;
 
-				if ( interwiki.prefix === source.lang ) {
-					this.#invalid.push( {
-						source: source,
-						target: target,
-						lang: interwiki.prefix,
-						reason: FamilyInvalidConnectionReason.SAME_LANG
-					} );
-					continue;
-				}
-
-				if ( this.strict ) {
-					if ( ( await target.load( 'interwikimap', 'lang' ).catch( () => null ) ) === null ) {
-						this.#linkedBy.push( target.url, source );
+					if ( interwiki.prefix === source.lang ) {
 						this.#invalid.push( {
 							source: source,
 							target: target,
 							lang: interwiki.prefix,
-							reason: FamilyInvalidConnectionReason.DOESNT_EXIST
+							reason: FamilyInvalidConnectionReason.SAME_LANG
 						} );
 						continue;
 					}
 
-					this.#linkedBy.push( target.url, source );
+					if ( this.strict ) {
+						if ( ( await target.load( 'interwikimap', 'lang' ).catch( () => null ) ) === null ) {
+							this.#linkedBy.push( target.url, source );
+							this.#invalid.push( {
+								source: source,
+								target: target,
+								lang: interwiki.prefix,
+								reason: FamilyInvalidConnectionReason.DOESNT_EXIST
+							} );
+							continue;
+						}
 
-					if ( target.lang !== interwiki.prefix ) {
-						this.#invalid.push( {
-							source: source,
-							target: target,
-							lang: interwiki.prefix,
-							reason: FamilyInvalidConnectionReason.LANG_MISMATCH
-						} );
-					} else {
-						if ( interwiki.prefix in this.wikis ) {
-							if ( this.#conflicts.has( interwiki.prefix ) ) {
-								if ( this.#conflicts.push( interwiki.prefix, target.url ) > -1 ) {
+						this.#linkedBy.push( target.url, source );
+
+						if ( target.lang !== interwiki.prefix ) {
+							this.#invalid.push( {
+								source: source,
+								target: target,
+								lang: interwiki.prefix,
+								reason: FamilyInvalidConnectionReason.LANG_MISMATCH
+							} );
+						} else {
+							if ( interwiki.prefix in this.wikis ) {
+								if ( this.#conflicts.has( interwiki.prefix ) ) {
+									if ( this.#conflicts.push( interwiki.prefix, target.url ) > -1 ) {
+										queue.push( target );
+									}
+								} else if ( this.wikis[interwiki.prefix].url.replace( /^https?:\/\//, '//' ) !== target.url.replace( /^https?:\/\//, '//' ) ) {
+									this.#conflicts.push( interwiki.prefix, this.wikis[interwiki.prefix].url );
+									this.#conflicts.push( interwiki.prefix, target.url );
 									queue.push( target );
 								}
-							} else if ( this.wikis[interwiki.prefix].url.replace( /^https?:\/\//, '//' ) !== target.url.replace( /^https?:\/\//, '//' ) ) {
-								this.#conflicts.push( interwiki.prefix, this.wikis[interwiki.prefix].url );
-								this.#conflicts.push( interwiki.prefix, target.url );
+							} else {
+								this.wikis[interwiki.prefix] = target;
 								queue.push( target );
 							}
-						} else {
-							this.wikis[interwiki.prefix] = target;
-							queue.push( target );
 						}
+					} else {
+						this.#linkedBy.push( target.url, source );
+						this.wikis[interwiki.prefix] = target;
 					}
-				} else {
-					this.#linkedBy.push( target.url, source );
-					this.wikis[interwiki.prefix] = target;
+				} catch ( e ) {
+					if ( e instanceof WikiNotOnNetworkError ) {
+						this.#invalid.push( {
+							source: source,
+							target: new Wiki( interwiki.api ?? interwiki.url ),
+							lang: interwiki.prefix,
+							reason: FamilyInvalidConnectionReason.NOT_ON_NETWORK
+						} );
+					} else {
+						throw e;
+					}
 				}
 			}
 		}
