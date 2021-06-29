@@ -1,4 +1,5 @@
 export * from './interfaces/Api';
+export * from './interfaces/ApiParse';
 export * from './interfaces/Fandom';
 export * from './models/fandom/Fandom';
 export * from './models/fandom/FandomFamily';
