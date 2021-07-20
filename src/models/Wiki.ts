@@ -1,20 +1,20 @@
 import {
-	ApiQueryInterwikiMapResult,
-	ApiQuerySiteinfoProp,
-	ApiQuerySiteinfoResult,
-	ApiQueryStatisticsResult,
-	ApiQueryToken,
-	ApiResult,
-	ApiStatistics,
-	Interwiki
-} from '../interfaces/Api';
+	ApiErrorResponse,
+	ApiQueryMetaSiteinfoPropInterwikimap,
+	ApiQueryMetaSiteinfoProps,
+	ApiQueryMetaSiteinfoPropStatistics,
+	ApiRequestBase,
+	ApiRequestResponse,
+	KnownApiRequests,
+} from '../../types/types';
 import { FetchManager, FetchManagerOptions } from '../util/FetchManager';
-import { RequestInit, Response } from 'node-fetch';
+import { Headers, RequestInit, Response } from 'node-fetch';
 import { UncompleteModel } from './UncompleteModel';
 import { UncompleteModelSet } from './UncompleteModelSet';
 import { WikiFamily } from './WikiFamily';
 import { WikiNetwork } from './WikiNetwork';
 import { WikiUser, WikiUserSet } from './WikiUser';
+import { WikiApiError } from './WikiApiError';
 
 export class Wiki extends UncompleteModel {
 	public readonly entrypoint : string;
@@ -24,12 +24,12 @@ export class Wiki extends UncompleteModel {
 
 	public articlepath? : string;
 	public generator? : string;
-	public interwikimap? : Interwiki[];
+	public interwikimap? : ApiQueryMetaSiteinfoPropInterwikimap;
 	public lang? : string;
 	public name? : string;
 	public server? : string;
 	public scriptpath? : string;
-	public statistics? : ApiStatistics;
+	public statistics? : ApiQueryMetaSiteinfoPropStatistics;
 	public url : string;
 
 	protected readonly fetchManager : FetchManager;
@@ -74,19 +74,61 @@ export class Wiki extends UncompleteModel {
 		return this.fetchManager.queue( this.getURL( path, params ), requestOptions );
 	}
 
-	public async callApi<T extends ApiResult = ApiResult>( params : Record<string, string>, options? : RequestInit ) : Promise<T> {
-		params.format = 'json';
+	protected processApiParams( params : ApiRequestBase ) : Record<string, string> {
+		const out : Record<string, string> = {};
 
-		if ( options?.method === 'POST' && options?.body === undefined ) {
-			options = options ?? {};
-			options.headers = options.headers ?? {};
+		for ( const key in params ) {
+			const val = params[key];
 
-			options.body = new URLSearchParams( params ).toString();
-			params = {};
-			Object.assign( options.headers, { 'Content-Type': 'application/x-www-form-urlencoded' } );
+			if ( Array.isArray( val ) ) {
+				out[key] = val.join( '|' );
+			} else if ( val instanceof Date ) {
+				out[key] = val.toJSON();
+			} else if ( val !== undefined && val !== null ) {
+				out[key] = val.toString();
+			}
 		}
 
-		return ( await this.call( 'api.php', params, options ) ).json();
+		return out;
+	}
+
+	public async callApi<P extends KnownApiRequests>( params : Readonly<P>, options? : RequestInit ) : Promise<ApiRequestResponse<P>> {
+		return this.callApiUnknown( params, options );
+	}
+
+	public async callApiUnknown<P extends ApiRequestBase = ApiRequestBase, R = ApiRequestResponse<P>>( params : Readonly<P>, options? : RequestInit ) : Promise<R> {
+		Object.assign( params, {
+			format: 'json',
+			formatversion: 2
+		} );
+
+		let callParams : Record<string, string> = this.processApiParams( params );
+		options = options ?? {};
+
+		if ( options?.method === 'POST' && options?.body === undefined ) {
+			options.body = new URLSearchParams( callParams ).toString();
+			options.headers ??= {};
+
+			if ( options.headers instanceof Headers ) {
+				options.headers.set( 'Content-Type', 'application/x-www-form-urlencoded' );
+			} else if ( Array.isArray( options.headers ) ) {
+				options.headers.push( [ 'Content-Type', 'application/x-www-form-urlencoded' ] );
+			} else {
+				options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+			}
+
+			callParams = {};
+		}
+
+		return this.call( 'api.php', callParams, options )
+			.then<R|ApiErrorResponse>( r => r.json() )
+			.then( r => {
+				if ( 'error' in r ) {
+					throw new WikiApiError( r );
+				}
+
+				return r;
+			} );
 	}
 
 	public async callIndex( params : string|Record<string, string>, options? : RequestInit ) : Promise<Response> {
@@ -97,30 +139,17 @@ export class Wiki extends UncompleteModel {
 		return this.call( 'index.php', params, options );
 	}
 
-	public async getSiteinfo<T extends ApiQuerySiteinfoProp[]>( props : T ) : Promise<
-		( 'general'      extends T[number] ? ApiQuerySiteinfoResult     : {} ) &
-		( 'interwikimap' extends T[number] ? ApiQueryInterwikiMapResult : {} ) &
-		( 'statistics'   extends T[number] ? ApiQueryStatisticsResult   : {} )
-	> {
-		return this.callApi( {
-			action: 'query',
-			meta: 'siteinfo',
-			siprop: props.join( '|' )
-		} );
-	}
-
 	public async getEditToken() : Promise<string> {
-		const res = await this.callApi<ApiQueryToken>( {
+		const res = await this.callApi( {
 			action: 'query',
-			prop: 'info',
-			intoken: 'edit',
-			titles: 'Main_Page'
+			meta: 'tokens',
+			type: 'csrf',
 		} );
 
-		return Object.values( res.query.pages )[0].edittoken;
+		return res.query.tokens.csrftoken;
 	}
 
-	getURL( path = '', params? : any ) : string {
+	getURL( path = '', params? : Record<string, string> ) : string {
 		const base : string = this.scriptpath && this.server
 			? this.server + this.scriptpath
 			: this.url;
@@ -128,7 +157,7 @@ export class Wiki extends UncompleteModel {
 		return encodeURI( `${ base }/${ path }` ) + ( params ? `?${( new URLSearchParams( params ) ).toString()}` : '' );
 	}
 
-	getWikiURL( path = '', params? : any ) : string {
+	getWikiURL( path = '', params? : Record<string, string> ) : string {
 		const base : string = this.articlepath && this.server
 			? this.server + this.articlepath
 			: `${ this.url }/$1`;
@@ -158,24 +187,23 @@ Wiki.registerLoader( {
 	async load( set : Wiki|UncompleteModelSet<Wiki>, components : string[] ) {
 		const models : Wiki[] = set instanceof Wiki ? [ set ] : set.models;
 
-		const load : ApiQuerySiteinfoProp[] = [ 'general' ];
+		const load : ApiQueryMetaSiteinfoProps[] = [ 'general' ];
+
 		if ( components.includes( 'interwikimap' ) ) {
 			load.push( 'interwikimap' );
 		}
+
 		if ( components.includes( 'statistics' ) ) {
 			load.push( 'statistics' );
 		}
 
 		return Promise.all( models.map( model =>
-			model.getSiteinfo( load )
-				.then( si => {
-					if ( components.includes( 'interwikimap' ) ) {
-						model.interwikimap = si.query.interwikimap;
-					}
-					if ( components.includes( 'statistics' ) ) {
-						model.statistics = si.query.statistics;
-					}
-
+			model.callApi( {
+				action: 'query',
+				meta: 'siteinfo',
+				siprop: load
+			} ).then( si => {
+				if ( 'general' in si.query ) {
 					model.articlepath = si.query.general.articlepath;
 					model.generator = si.query.general.generator;
 					model.lang = si.query.general.lang;
@@ -183,7 +211,16 @@ Wiki.registerLoader( {
 					model.server = si.query.general.server;
 					model.scriptpath = si.query.general.scriptpath;
 					model.url = Wiki.normalizeURL( model.server + model.scriptpath );
-				} )
+				}
+
+				if ( 'interwikimap' in si.query ) {
+					model.interwikimap = si.query.interwikimap;
+				}
+
+				if ( 'statistics' in si.query ) {
+					model.statistics = si.query.statistics;
+				}
+			} )
 		) );
 	}
 } );

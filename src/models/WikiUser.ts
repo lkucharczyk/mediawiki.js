@@ -1,4 +1,4 @@
-import { ApiQueryListUsers, ApiUser } from '../interfaces/Api';
+import { ApiQueryUser } from '../../types/types';
 import { UncompleteModel } from "./UncompleteModel";
 import { UncompleteModelSet } from './UncompleteModelSet';
 import { Wiki } from "./Wiki";
@@ -66,30 +66,27 @@ const WikiUserLoader = {
 			}
 		}
 
-		const users : ApiUser[] = [];
+		const users : ApiQueryUser<'groups'>[] = [];
 		const promises = [];
 
 		const params = {
 			action: 'query',
 			list: 'users',
 			usprop: 'groups'
-		};
+		} as const;
 
 		if ( ids.length ) {
 			promises.push(
-				models[0].wiki.callApi<ApiQueryListUsers>(
-					Object.assign( {
-						usids: ids.join( '|' ),
-						ususerids: ids.join( '|' )
-					}, params )
+				models[0].wiki.callApi(
+					Object.assign( { ususerids: ids }, params )
 				).then( e => users.push( ...e.query.users ) )
 			);
 		}
 
 		if ( names.length ) {
 			promises.push(
-				models[0].wiki.callApi<ApiQueryListUsers>(
-					Object.assign( { ususers: names.join( '|' ) }, params )
+				models[0].wiki.callApi(
+					Object.assign( { ususers: names }, params )
 				).then( e => users.push( ...e.query.users ) )
 			);
 		}
