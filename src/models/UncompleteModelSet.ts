@@ -3,7 +3,7 @@ import { UncompleteModel, UncompleteModelLoader } from './UncompleteModel';
 export interface UncompleteModelSetLoader<T extends UncompleteModel = UncompleteModel> extends UncompleteModelLoader<T> {
 	components : string[];
 	dependencies? : string[];
-	load( set : T|UncompleteModelSet<T>, components : string[] ) : Promise<void>;
+	load( set : T|UncompleteModelSet<T>, components : string[] ) : Promise<string[]|void>;
 };
 
 interface UncompleteModelSet<T extends UncompleteModel> {
@@ -26,7 +26,7 @@ class UncompleteModelSet<T extends UncompleteModel> {
 		const loading = this.models.map( e => e.isLoading( components ) );
 		components = components.filter( c => !loading.every( m => m[c] === true || m[c] instanceof Promise ) );
 
-		const promises = loading.flatMap( e => Object.values( e ).filter( e => e instanceof Promise ) ) as Promise<any>[];
+		const promises = loading.flatMap( e => Object.values( e ).filter( ( e ) : e is Promise<any> => e instanceof Promise ) );
 
 		if ( components.length ) {
 			for ( const loader of constructor.LOADERS ) {
@@ -55,8 +55,6 @@ class UncompleteModelSet<T extends UncompleteModel> {
 			}
 		}
 
-
-
 		await Promise.all( promises );
 
 		return this;
@@ -73,7 +71,6 @@ class UncompleteModelSet<T extends UncompleteModel> {
 			model.clear();
 		}
 	}
-
 
 	public static registerLoader<T extends UncompleteModel = UncompleteModel>( ...loaders : UncompleteModelSetLoader<T>[] ) : void {
 		if ( !this.hasOwnProperty( 'LOADERS' ) ) {

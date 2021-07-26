@@ -1,23 +1,27 @@
 import { Fandom } from './Fandom';
 import { FandomWiki } from './FandomWiki';
-import { WikiUser, WikiUserSet } from '../WikiUser';
+import { WikiUser, WikiUserComponents, WikiUserSet } from '../WikiUser';
 import { chunkArray } from '../../util/util';
+import { Loaded } from '../UncompleteModel';
 
-interface FandomUser extends WikiUser {
+interface FandomUserComponents extends WikiUserComponents {
+	avatar? : string;
+};
+
+interface FandomUser extends FandomUserComponents {
 	wiki : FandomWiki;
 	network : Fandom;
+	load<T extends keyof FandomUserComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
 };
 
 class FandomUser extends WikiUser {
-	avatar? : string;
-
 	public constructor( name : string|number, wiki : FandomWiki ) {
 		super( name, wiki );
 	}
+};
 
-	protected async __load( components : string[] ) : Promise<void> {
-		await new FandomUserSet( [ this ] ).load( ...components );
-	}
+interface FandomUserSet {
+	load<T extends keyof FandomUserComponents>( ...components : T[] ) : Promise<this & { models: Loaded<FandomUser, T>[] }>;
 };
 
 class FandomUserSet extends WikiUserSet<FandomUser> {
@@ -40,6 +44,8 @@ const FandomUserLoader = {
 					}
 				}
 			}
+
+			return this.components;
 		} );
 	}
 }
@@ -47,4 +53,4 @@ const FandomUserLoader = {
 FandomUser.registerLoader( ...WikiUser.LOADERS, FandomUserLoader );
 FandomUserSet.registerLoader( ...WikiUserSet.LOADERS, FandomUserLoader );
 
-export { FandomUser, FandomUserSet };
+export { FandomUser, FandomUserComponents, FandomUserSet };

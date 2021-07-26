@@ -1,16 +1,22 @@
 import { ApiQueryUser } from '../../types/types';
-import { UncompleteModel } from "./UncompleteModel";
+import { Loaded, UncompleteModel } from "./UncompleteModel";
 import { UncompleteModelSet } from './UncompleteModelSet';
 import { Wiki } from "./Wiki";
 import { WikiNetwork } from "./WikiNetwork";
 
-export class WikiUser extends UncompleteModel {
-	public id? : number;
-	public name : string = '';
+interface WikiUserComponents{
+	id? : number;
+	name? : string;
+	groups? : string[];
+};
+
+interface WikiUser extends WikiUserComponents {
+	load<T extends keyof WikiUserComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
+};
+
+class WikiUser extends UncompleteModel {
 	public network? : WikiNetwork;
 	public wiki : Wiki;
-
-	public groups : string[] = [];
 
 	public constructor( name : number|string, wiki : Wiki ) {
 		super();
@@ -33,8 +39,6 @@ export class WikiUser extends UncompleteModel {
 	}
 
 	public clear() : void {
-		this.groups = [];
-
 		super.clear();
 
 		if ( this.id ) {
@@ -47,7 +51,11 @@ export class WikiUser extends UncompleteModel {
 	}
 };
 
-export class WikiUserSet<T extends WikiUser = WikiUser> extends UncompleteModelSet<T> {
+interface WikiUserSet {
+	load<T extends keyof WikiUserComponents>( ...components : T[] ) : Promise<this & { models: Loaded<WikiUser, T>[] }>;
+};
+
+class WikiUserSet<T extends WikiUser = WikiUser> extends UncompleteModelSet<T> {
 };
 
 const WikiUserLoader = {
@@ -61,7 +69,7 @@ const WikiUserLoader = {
 		for ( const model of models ) {
 			if ( model.id ) {
 				ids.push( model.id );
-			} else {
+			} else if ( model.name ) {
 				names.push( model.name );
 			}
 		}
@@ -102,8 +110,12 @@ const WikiUserLoader = {
 				}
 			}
 		}
+
+		return this.components;
 	}
 };
 
 WikiUser.registerLoader( WikiUserLoader );
 WikiUserSet.registerLoader( WikiUserLoader );
+
+export { WikiUser, WikiUserComponents, WikiUserSet };

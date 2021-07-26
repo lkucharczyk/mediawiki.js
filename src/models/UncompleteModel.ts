@@ -5,14 +5,14 @@ export type Loaded<T, U extends keyof T> = T & Required<Pick<T, U>>;
 export interface UncompleteModelLoader<T extends UncompleteModel = UncompleteModel> {
 	components : string[];
 	dependencies? : string[];
-	load : ( ( model : T, components : string[] ) => Promise<any> ) | ( ( model : T|UncompleteModelSet<T>, components : string[] ) => Promise<any> );
+	load : ( ( model : T, components : string[] ) => Promise<string[]|void> ) | ( ( model : T|UncompleteModelSet<T>, components : string[] ) => Promise<string[]|void> );
 };
 
 export abstract class UncompleteModel {
 	public static COMPONENTS : string[] = [];
 	public static LOADERS : UncompleteModelLoader[] = [];
 
-	#loading : { [component : string] : Promise<any> } = {};
+	#loading : Record<string, Promise<string[]|void>> = {};
 	#loaded : string[] = [];
 
 	public async load( ...components : string[] ) : Promise<this> {
@@ -57,14 +57,14 @@ export abstract class UncompleteModel {
 		return Promise.all( promises ).then( () => this );
 	}
 
-	public addLoading( components : string|string[], promise : Promise<any> ) : void {
+	public addLoading( components : string|string[], promise : Promise<string[]|void> ) : void {
 		const constructor = this.constructor as typeof UncompleteModel;
 
 		if ( !Array.isArray( components ) ) {
 			components = [ components ];
 		}
 
-		promise.then( () => this.setLoaded( components ) ).catch( e => false );
+		promise.then( ( c ) => this.setLoaded( c ? c : components ) ).catch( e => false );
 
 		for ( const component of components ) {
 			if ( constructor.COMPONENTS.includes( component ) ) {
@@ -75,18 +75,18 @@ export abstract class UncompleteModel {
 		}
 	}
 
-	public isLoading( components : string|string[] ) : { [ component : string ] : boolean|Promise<void> } {
-		const out : { [ component : string ] : boolean|Promise<any> } = {};
-
+	public isLoading<T extends string>( components : T|T[] ) : Record<T, boolean|Promise<string[]|void>> {
 		if ( !Array.isArray( components ) ) {
 			components = [ components ];
 		}
+
+		const out = {} as Record<T, boolean|Promise<string[]|void>>;
 
 		for ( const component of components ) {
 			if ( this.isLoaded( components ) ) {
 				out[component] = true;
 			} else if ( component in this.#loading ) {
-				out[component] = this.#loading[component]
+				out[component] = this.#loading[component] as Promise<string[]|void>;
 			} else {
 				out[component] = false;
 			}
@@ -132,14 +132,19 @@ export abstract class UncompleteModel {
 		this.COMPONENTS = Array.from( new Set( [ this.COMPONENTS, ...loaders.map( e => e.components ) ].flat() ) );
 	}
 
-	public clear() : void {
+	public clear() : asserts this is UncompleteModel {
 		this.#loaded = [];
 	}
 
 	public fromJSON( data : Partial<this> ) : this {
 		for ( const prop in data ) {
-			if ( data.hasOwnProperty( prop ) && typeof data[prop] !== 'function' && ( this.constructor as typeof UncompleteModel ).COMPONENTS.includes( prop ) ) {
-				this[prop] = data[prop] as any;
+			if (
+				data.hasOwnProperty( prop )
+				&& data[prop as keyof typeof data] !== undefined
+				&& typeof data[prop as keyof typeof data] !== 'function'
+				&& ( this.constructor as typeof UncompleteModel ).COMPONENTS.includes( prop )
+			) {
+				this[prop as keyof this] = data[prop as keyof typeof data] as any;
 				this.setLoaded( prop );
 			}
 		}

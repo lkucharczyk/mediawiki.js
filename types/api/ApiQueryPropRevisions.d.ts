@@ -31,5 +31,5 @@ export type ApiQueryPropRevisions<P extends ApiQueryPropRevisionsProps = 'commen
 		parentid : number;
 		revid : number;
 	} )
-	& ( Extract<P, 'content'|'contentmodel'|'slotsha1'|'slotsize'> extends never ? {} : { slots : ApiQueryPropRevisionsSlot<P> } )
+	& ( Extract<P, 'content'|'contentmodel'|'slotsha1'|'slotsize'> extends never ? {} : { slots : ApiQueryPropRevisionsSlots<P> } )
 )[];

@@ -57,31 +57,16 @@ export interface UserDetailsResult extends NirvanaResult {
 
 export interface WikiDetails {
 	id : number;
+	name : string;
 	url : string;
-	wordmark : string;
-	title : string;
+	lang : string;
+	desc : string;
 	stats : {
-		edits : number;
-		articles : number;
-		pages : number;
-		users : number;
-		activeUsers : number;
-		images : number;
-		videos : number;
-		admins : number;
+		edits : string;
+		articles : string;
 		discussions? : number;
 	},
-	topUsers : number[];
-	founding_user_id : string;
-	creation_date : string;
-	headline : string|null;
-	name : string;
-	domain : string;
-	hub : string;
-	lang : string;
-	topic : string|null;
-	desc : string;
-	image : string;
+	image : string|null;
 };
 
 export interface WikiDetailsResult extends NirvanaResult {

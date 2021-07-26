@@ -9,28 +9,34 @@ import {
 } from '../../types/types';
 import { FetchManager, FetchManagerOptions } from '../util/FetchManager';
 import { Headers, RequestInit, Response } from 'node-fetch';
-import { UncompleteModel } from './UncompleteModel';
+import { Loaded, UncompleteModel } from './UncompleteModel';
 import { UncompleteModelSet } from './UncompleteModelSet';
 import { WikiFamily } from './WikiFamily';
 import { WikiNetwork } from './WikiNetwork';
 import { WikiUser, WikiUserSet } from './WikiUser';
 import { WikiApiError } from './WikiApiError';
 
-export class Wiki extends UncompleteModel {
+interface WikiComponents {
+	articlepath? : string;
+	generator? : string;
+	interwikimap? : ApiQueryMetaSiteinfoPropInterwikimap;
+	lang? : string;
+	name? : string;
+	server? : string;
+	scriptpath? : string;
+	statistics? : ApiQueryMetaSiteinfoPropStatistics;
+	url : string;
+};
+
+interface Wiki extends WikiComponents {
+	load<T extends keyof WikiComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
+};
+
+class Wiki extends UncompleteModel {
 	public readonly entrypoint : string;
 	public family? : WikiFamily;
 	public network? : WikiNetwork;
 	public requestOptions : RequestInit;
-
-	public articlepath? : string;
-	public generator? : string;
-	public interwikimap? : ApiQueryMetaSiteinfoPropInterwikimap;
-	public lang? : string;
-	public name? : string;
-	public server? : string;
-	public scriptpath? : string;
-	public statistics? : ApiQueryMetaSiteinfoPropStatistics;
-	public url : string;
 
 	protected readonly fetchManager : FetchManager;
 
@@ -182,6 +188,13 @@ export class Wiki extends UncompleteModel {
 	}
 };
 
+interface WikiSet {
+	load<T extends keyof WikiComponents>( ...components : T[] ) : Promise<this & { models: Loaded<Wiki, T>[] }>;
+};
+
+class WikiSet<T extends Wiki = Wiki> extends UncompleteModelSet<T> {
+};
+
 Wiki.registerLoader( {
 	components: [ 'articlepath', 'generator', 'interwikimap', 'lang', 'name', 'server', 'scriptpath', 'statistics', 'url' ],
 	async load( set : Wiki|UncompleteModelSet<Wiki>, components : string[] ) {
@@ -197,7 +210,7 @@ Wiki.registerLoader( {
 			load.push( 'statistics' );
 		}
 
-		return Promise.all( models.map( model =>
+		await Promise.all( models.map( model =>
 			model.callApi( {
 				action: 'query',
 				meta: 'siteinfo',
@@ -222,5 +235,9 @@ Wiki.registerLoader( {
 				}
 			} )
 		) );
+
+		return this.components.filter( ( c : string ) => ![ 'interwikimap', 'sitemap' ].includes( c ) || components.includes( c ) );
 	}
 } );
+
+export { Wiki, WikiComponents, WikiSet }

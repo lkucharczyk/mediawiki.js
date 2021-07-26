@@ -87,7 +87,7 @@ type ExtractProp<T extends ApiQueryPageRequest, K extends keyof ApiQueryPageProp
 		: true;
 
 type ExtractProps<T extends ApiQueryPageRequest, K extends (keyof ApiQueryPageProps)[]> = K extends K ? {
-	[ k in keyof Required<ApiQueryPageProps> ] : Extract<K[number], k> extends never ? undefined : ExtractProp<T, k>
+	[ k in keyof Required<ApiQueryPageProps> as Extract<K[number], k> extends never ? never : k ] : ExtractProp<T, k>
 } : never;
 
 export type ApiQueryPageRequestResponse<T extends ApiQueryPageRequest> =

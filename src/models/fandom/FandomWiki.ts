@@ -3,23 +3,23 @@ import { FandomUser, FandomUserSet } from './FandomUser';
 import { chunkArray, FetchManager, FetchManagerOptions } from '../../util/util';
 import { MercuryWikiVariables, MercuryWikiVariablesResult, NirvanaResult } from '../../interfaces/Fandom';
 import { RequestInit } from 'node-fetch';
-import { UncompleteModelLoader } from '../UncompleteModel';
 import { UncompleteModelSet } from '../UncompleteModelSet';
-import { Wiki } from '../Wiki';
+import { Wiki, WikiComponents } from '../Wiki';
 import { FandomFamily } from './FandomFamily';
+import { Loaded } from '../UncompleteModel';
 
-interface FandomWiki {
-	registerLoader( ...loader : UncompleteModelLoader<FandomWiki>[] ) : void;
+interface FandomWikiComponents extends WikiComponents {
+	id? : number;
+	vertical? : string;
+};
+
+interface FandomWiki extends FandomWikiComponents {
+	load<T extends keyof FandomWikiComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
 };
 
 class FandomWiki extends Wiki {
 	public readonly network : Fandom;
 	public family? : FandomFamily;
-
-	public founder? : FandomUser;
-	public foundingdate? : string;
-	public id? : number;
-	public vertical? : string;
 
 	constructor( network : Fandom, entrypoint : string, fetchManager? : FetchManager|FetchManagerOptions, requestOptions? : RequestInit ) {
 		super( entrypoint, fetchManager, requestOptions );
@@ -60,22 +60,14 @@ class FandomWiki extends Wiki {
 
 		super.clear();
 	}
+};
 
-	public toJSON() : any {
-		const out : any = super.toJSON();
-
-		if ( this.founder && this.founder.id ) {
-			out.founder = this.founder.id
-		}
-
-		return out;
-	}
+interface FandomWikiSet {
+	load<T extends keyof FandomWikiComponents>( ...components : T[] ) : Promise<this & { models: Loaded<FandomWiki, T>[] }>;
 };
 
 class FandomWikiSet extends UncompleteModelSet<FandomWiki> {
 };
-
-export { FandomWiki, FandomWikiSet };
 
 // MercuryWikiVariables loader
 const FandomWikiMWVLoader = {
@@ -90,7 +82,7 @@ const FandomWikiMWVLoader = {
 			wiki.scriptpath = mwv.scriptPath;
 			wiki.vertical = mwv.vertical;
 
-			wiki.setLoaded( this.components );
+			return this.components;
 		} );
 	}
 };
@@ -117,9 +109,13 @@ const FandomWikiWDLoader = {
 					}
 				}
 			}
+
+			return this.components;
 		} );
 	}
 };
 
 FandomWiki.registerLoader( ...Wiki.LOADERS, FandomWikiMWVLoader, FandomWikiWDLoader );
 FandomWikiSet.registerLoader( FandomWikiWDLoader );
+
+export { FandomWiki, FandomWikiComponents, FandomWikiSet };
