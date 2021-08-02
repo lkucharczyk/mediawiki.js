@@ -12,6 +12,7 @@ import { ApiQueryListAllpagesRequest, ApiQueryListAllpagesResponse } from './Api
 import { ApiQueryMetaAllmessagesRequest, ApiQueryMetaAllmessagesResponse } from './ApiQueryMetaAllmessages';
 import { ApiUploadRequest } from './ApiUpload';
 import { ApiEditRequest } from './ApiEdit';
+import { UnionToIntersection } from '../util';
 
 export interface ApiRequestBase {
 	action : string;
@@ -60,8 +61,6 @@ interface KnownApiResponsesObj<T extends ApiRequestBase> {
 	QueryMetaUserinfo      : T extends ApiQueryMetaUserinfoRequest ? ApiQueryMetaUserinfoRequestResponse<T> : never;
 	QueryPage              : T extends ApiQueryPageRequest ? ApiQueryPageRequestResponse<T> : never;
 }
-
-type UnionToIntersection<U> = ( U extends any ? ( k : U ) => void : never ) extends ( ( k : infer I ) => void ) ? I : never;
 
 export type ApiRequestResponse<T extends ApiRequestBase> =
 	Exclude<KnownApiResponsesObj<T>[keyof KnownApiResponsesObj<T>], never> extends never

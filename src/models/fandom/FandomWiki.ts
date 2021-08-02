@@ -1,12 +1,13 @@
 import { Fandom } from './Fandom';
 import { FandomUser, FandomUserSet } from './FandomUser';
 import { chunkArray, FetchManager, FetchManagerOptions } from '../../util/util';
-import { MercuryWikiVariables, MercuryWikiVariablesResult, NirvanaResult } from '../../interfaces/Fandom';
 import { RequestInit } from 'node-fetch';
 import { UncompleteModelSet } from '../UncompleteModelSet';
 import { Wiki, WikiComponents } from '../Wiki';
 import { FandomFamily } from './FandomFamily';
 import { Loaded } from '../UncompleteModel';
+import { KnownNirvanaRequests, KnownNirvanaResponses, NirvanaErrorResponse, NirvanaRequestBase, NirvanaResponse } from '../../../types/types';
+import { NirvanaError } from './NirvanaError';
 
 interface FandomWikiComponents extends WikiComponents {
 	id? : number;
@@ -14,7 +15,9 @@ interface FandomWikiComponents extends WikiComponents {
 };
 
 interface FandomWiki extends FandomWikiComponents {
+	callNirvana<P extends KnownNirvanaRequests>( params : Readonly<P>, options? : RequestInit ) : Promise<KnownNirvanaResponses<P>>;
 	load<T extends keyof FandomWikiComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
+	setLoaded( components : keyof FandomWikiComponents|( keyof FandomWikiComponents )[] ) : void;
 };
 
 class FandomWiki extends Wiki {
@@ -26,16 +29,17 @@ class FandomWiki extends Wiki {
 		this.network = network;
 	}
 
-	public async callNirvana<T extends NirvanaResult = NirvanaResult>( params : Record<string, string> & { controller : string, method? : string }, options? : RequestInit ) : Promise<T> {
+	public async callNirvanaUnknown<T extends NirvanaResponse = NirvanaResponse>( params : NirvanaRequestBase, options? : RequestInit ) : Promise<T> {
 		params.format = 'json';
-		return this.call( 'wikia.php', params, options ).then( e => e.json() );
-	}
+		return this.call( 'wikia.php', this.processApiParams( params, ',' ), options )
+			.then<T|NirvanaErrorResponse>( r => r.json() )
+			.then( r => {
+				if ( 'error' in r && r.error !== undefined ) {
+					throw new NirvanaError( r );
+				}
 
-	public async getMercuryWikiVariables() : Promise<MercuryWikiVariables> {
-		return this.callNirvana<MercuryWikiVariablesResult>( {
-			controller: 'MercuryApiController',
-			method: 'getWikiVariables'
-		} ).then( e => e.data );
+				return r;
+			} );
 	}
 
 	public getFamily( strict : boolean = true ) : FandomFamily {
@@ -62,6 +66,8 @@ class FandomWiki extends Wiki {
 	}
 };
 
+FandomWiki.prototype.callNirvana = FandomWiki.prototype.callNirvanaUnknown;
+
 interface FandomWikiSet {
 	load<T extends keyof FandomWikiComponents>( ...components : T[] ) : Promise<this & { models: Loaded<FandomWiki, T>[] }>;
 };
@@ -73,14 +79,17 @@ class FandomWikiSet extends UncompleteModelSet<FandomWiki> {
 const FandomWikiMWVLoader = {
 	components: [ 'articlepath', 'id', 'lang', 'name', 'scriptpath', 'server', 'vertical' ],
 	async load( wiki : FandomWiki ) {
-		return wiki.getMercuryWikiVariables().then( mwv => {
-			wiki.articlepath = mwv.articlePath + '$1';
-			wiki.id = mwv.id;
-			wiki.lang = mwv.language.content;
-			wiki.name = mwv.siteName;
-			wiki.server = mwv.basePath;
-			wiki.scriptpath = mwv.scriptPath;
-			wiki.vertical = mwv.vertical;
+		return wiki.callNirvana( {
+			controller: 'MercuryApi',
+			method: 'getWikiVariables'
+		} ).then( res => {
+			wiki.articlepath = res.data.articlePath + '$1';
+			wiki.id = res.data.id;
+			wiki.lang = res.data.language.content;
+			wiki.name = res.data.siteName;
+			wiki.server = res.data.basePath;
+			wiki.scriptpath = res.data.scriptPath;
+			wiki.vertical = res.data.vertical;
 
 			return this.components;
 		} );
@@ -93,25 +102,27 @@ const FandomWikiWDLoader = {
 	dependencies: [ 'id' ],
 	async load( set : FandomWiki|FandomWikiSet ) {
 		const models = set instanceof FandomWiki ? [ set ] : set.models;
-		const ids = chunkArray( models.map( e => e.id ).filter( e => e !== undefined ) as number[], 250 );
+		const chunks = chunkArray( models.map( e => e.id ).filter( e => e !== undefined ) as number[], 250 );
 
-		return Promise.all( ids.map( e => models[0].network.getWikiDetails( e ) ) ).then( res => {
-			for ( const result of res ) {
-				for ( const _id in result ) {
+		return Promise.all( chunks.map( ids =>
+			models[0].callNirvana( {
+				controller: 'WikisApi',
+				method: 'getDetails',
+				ids
+			} ).then( result => {
+				for ( const _id in result.items ) {
 					const id = Number.parseInt( _id );
-					const details = result[_id];
+					const details = result.items[id];
 
 					const wiki = models.find( e => e.id === id );
-					if ( wiki ) {
+					if ( wiki && details ) {
 						wiki.lang = details.lang;
 						wiki.name = details.name;
 						wiki.server = details.url;
 					}
 				}
-			}
-
-			return this.components;
-		} );
+			} )
+		) ).then( () => this.components );
 	}
 };
 

@@ -1,5 +1,4 @@
 export * from '../types/types';
-export * from './interfaces/Fandom';
 export * from './models/fandom/Fandom';
 export * from './models/fandom/FandomFamily';
 export * from './models/fandom/FandomUser';

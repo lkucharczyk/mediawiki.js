@@ -132,7 +132,7 @@ export abstract class UncompleteModel {
 		this.COMPONENTS = Array.from( new Set( [ this.COMPONENTS, ...loaders.map( e => e.components ) ].flat() ) );
 	}
 
-	public clear() : asserts this is UncompleteModel {
+	public clear() {
 		this.#loaded = [];
 	}
 

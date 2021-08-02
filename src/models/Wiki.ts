@@ -29,7 +29,9 @@ interface WikiComponents {
 };
 
 interface Wiki extends WikiComponents {
+	callApi<P extends KnownApiRequests>( params : Readonly<P>, options? : RequestInit ) : Promise<ApiRequestResponse<P>>;
 	load<T extends keyof WikiComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
+	setLoaded( components : keyof WikiComponents|( keyof WikiComponents )[] ) : void;
 };
 
 class Wiki extends UncompleteModel {
@@ -80,14 +82,14 @@ class Wiki extends UncompleteModel {
 		return this.fetchManager.queue( this.getURL( path, params ), requestOptions );
 	}
 
-	protected processApiParams( params : ApiRequestBase ) : Record<string, string> {
+	protected processApiParams( params : Record<string, ApiRequestBase[string]>, arraySeparator : string = '|' ) : Record<string, string> {
 		const out : Record<string, string> = {};
 
 		for ( const key in params ) {
 			const val = params[key];
 
 			if ( Array.isArray( val ) ) {
-				out[key] = val.join( '|' );
+				out[key] = val.join( arraySeparator );
 			} else if ( val instanceof Date ) {
 				out[key] = val.toJSON();
 			} else if ( val !== undefined && val !== null ) {
@@ -96,10 +98,6 @@ class Wiki extends UncompleteModel {
 		}
 
 		return out;
-	}
-
-	public async callApi<P extends KnownApiRequests>( params : Readonly<P>, options? : RequestInit ) : Promise<ApiRequestResponse<P>> {
-		return this.callApiUnknown( params, options );
 	}
 
 	public async callApiUnknown<P extends ApiRequestBase = ApiRequestBase, R = ApiRequestResponse<P>>( params : Readonly<P>, options? : RequestInit ) : Promise<R> {
@@ -186,7 +184,9 @@ class Wiki extends UncompleteModel {
 	public getUsers( names : (string|number)[] ) : WikiUserSet {
 		return new WikiUserSet( names.map( e => this.getUser( e ) ) );
 	}
-};
+}
+
+Wiki.prototype.callApi = Wiki.prototype.callApiUnknown;
 
 interface WikiSet {
 	load<T extends keyof WikiComponents>( ...components : T[] ) : Promise<this & { models: Loaded<Wiki, T>[] }>;

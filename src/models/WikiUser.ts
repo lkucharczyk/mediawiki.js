@@ -12,6 +12,7 @@ interface WikiUserComponents{
 
 interface WikiUser extends WikiUserComponents {
 	load<T extends keyof WikiUserComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
+	setLoaded( components : keyof WikiUserComponents|( keyof WikiUserComponents )[] ) : void;
 };
 
 class WikiUser extends UncompleteModel {
@@ -28,7 +29,7 @@ class WikiUser extends UncompleteModel {
 			this.id = name;
 			this.setLoaded( 'id' );
 		} else {
-			this.name = name;
+			this.name = name.replace( /_/g, ' ' ).trim();
 			this.setLoaded( 'name' );
 		}
 	}

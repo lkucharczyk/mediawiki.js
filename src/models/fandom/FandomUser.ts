@@ -12,6 +12,7 @@ interface FandomUser extends FandomUserComponents {
 	wiki : FandomWiki;
 	network : Fandom;
 	load<T extends keyof FandomUserComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
+	setLoaded( components : keyof FandomUserComponents|( keyof FandomUserComponents )[] ) : void;
 };
 
 class FandomUser extends WikiUser {
@@ -34,19 +35,21 @@ const FandomUserLoader = {
 		const models = set instanceof FandomUser ? [ set ] : set.models;
 		const chunks = chunkArray( models.map( e => e.id as number ), 100 );
 
-		return Promise.all( chunks.map( e => models[0].network.getUserDetails( e ) ) ).then( res => {
-			for ( const result of res ) {
-				for ( const user of result ) {
+		return Promise.all( chunks.map( ids =>
+			models[0].wiki.callNirvana( {
+				controller: 'UserApi',
+				method: 'getDetails',
+				ids
+			} ).then( res => {
+				for ( const user of res.items ) {
 					const model = models.find( e => e.id === user.user_id );
 					if ( model ) {
 						model.name = user.name;
 						model.avatar = user.avatar;
 					}
 				}
-			}
-
-			return this.components;
-		} );
+			} )
+		) ).then( () => this.components );
 	}
 }
 

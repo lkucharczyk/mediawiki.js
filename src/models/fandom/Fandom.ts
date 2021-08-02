@@ -2,13 +2,8 @@ import { FandomUser, FandomUserSet } from './FandomUser';
 import { FandomWiki } from './FandomWiki';
 import { FetchManager, FetchManagerOptions } from '../../util/FetchManager';
 import { RequestInit } from 'node-fetch';
-import {
-	UserDetails,
-	UserDetailsResult,
-	WikiDetails,
-	WikiDetailsResult
-} from '../../interfaces/Fandom';
 import { WikiNetwork, WikiNotOnNetworkError } from '../WikiNetwork';
+import { Loaded } from '../UncompleteModel';
 
 interface Fandom extends WikiNetwork {
 	getUser( name : string|number ) : FandomUser;
@@ -18,7 +13,7 @@ interface Fandom extends WikiNetwork {
 class Fandom extends WikiNetwork {
 	public static readonly REGEXP_DOMAIN = /\.(?:fandom\.com|gamepedia\.com|\wikia\.(?:com|org))$/
 	public static readonly REGEXP_LANG = /^[a-z]{2,3}(?:-[a-z]{2,})?$/
-	public static readonly REGEXP_WIKI = /^(?:([a-z]{2}(?:-[a-z]{2,})?)\.)?([a-z0-9-_]+)$/
+	public static readonly REGEXP_WIKI = /^(?:([a-z]{2,3}(?:-[a-z]{2,})?)\.)?([a-z0-9-_]+)$/
 
 	public readonly central : FandomWiki;
 
@@ -59,28 +54,35 @@ class Fandom extends WikiNetwork {
 		return new FandomWiki( this, Fandom.normalizeURL( wiki ), this.fetchManager, this.requestOptions );
 	}
 
-	public async getUserDetails( ids : number|number[] ) : Promise<UserDetails[]> {
-		if ( !Array.isArray( ids ) ) {
-			ids = [ ids ];
-		}
-
-		return ( await this.central.callNirvana<UserDetailsResult>( {
-			controller: 'UserApiController',
-			method: 'GetDetails',
-			ids: ids.join( ',' )
-		} ) ).items;
+	public async getWikiById( id : number ) : Promise<Loaded<FandomWiki, 'id'>|null> {
+		return this.getWikisById( [ id ] ).then( o => o[id] );
 	}
 
-	public async getWikiDetails( ids : number|number[] ) : Promise<{ [ id : number ] : WikiDetails }> {
-		if ( !Array.isArray( ids ) ) {
-			ids = [ ids ];
-		}
-
-		return ( await this.central.callNirvana<WikiDetailsResult>( {
-			controller: 'WikisApiController',
-			method: 'GetDetails',
-			ids: ids.join( ',' )
+	public async getWikisById<T extends number>( ids : readonly T[] ) : Promise<{ [ id in T ] : Loaded<FandomWiki, 'id'>|null }> {
+		const items = ( await this.central.callNirvana( {
+			controller: 'WikisApi',
+			method: 'getDetails',
+			ids
 		} ) ).items;
+
+		return Object.fromEntries( ids.map( id => {
+			const item = items[id];
+
+			if ( item !== undefined ) {
+				const wiki = this.getWiki( item.url );
+
+				wiki.id = id;
+				wiki.lang = item.lang;
+				wiki.name = item.name;
+				wiki.server = item.url;
+
+				wiki.setLoaded( [ 'id', 'lang', 'name', 'server' ] );
+
+				return [ id, wiki ];
+			} else {
+				return [ id, null ];
+			}
+		} ) ) as { [ id in T ] : Loaded<FandomWiki, 'id'>|null };
 	}
 };
 
