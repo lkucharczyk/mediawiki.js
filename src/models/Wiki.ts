@@ -1,5 +1,6 @@
 import {
 	ApiErrorResponse,
+	ApiQueryMetaSiteinfoPropGeneral,
 	ApiQueryMetaSiteinfoPropInterwikimap,
 	ApiQueryMetaSiteinfoProps,
 	ApiQueryMetaSiteinfoPropStatistics,
@@ -15,6 +16,7 @@ import { WikiFamily } from './WikiFamily';
 import { WikiNetwork } from './WikiNetwork';
 import { WikiUser, WikiUserSet } from './WikiUser';
 import { WikiApiError } from './WikiApiError';
+import { isIterable } from '../util/util';
 
 interface WikiComponents {
 	articlepath? : string;
@@ -24,6 +26,7 @@ interface WikiComponents {
 	name? : string;
 	server? : string;
 	scriptpath? : string;
+	siteinfo? : ApiQueryMetaSiteinfoPropGeneral;
 	statistics? : ApiQueryMetaSiteinfoPropStatistics;
 	url : string;
 };
@@ -117,7 +120,7 @@ class Wiki extends UncompleteModel {
 				options.headers.set( 'Content-Type', 'application/x-www-form-urlencoded' );
 			} else if ( Array.isArray( options.headers ) ) {
 				options.headers.push( [ 'Content-Type', 'application/x-www-form-urlencoded' ] );
-			} else {
+			} else if ( !isIterable( options.headers ) ) {
 				options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
 			}
 
@@ -125,7 +128,7 @@ class Wiki extends UncompleteModel {
 		}
 
 		return this.call( 'api.php', callParams, options )
-			.then<R|ApiErrorResponse>( r => r.json() )
+			.then( r => r.json() as Promise<R|ApiErrorResponse> )
 			.then( r => {
 				if ( 'error' in r ) {
 					throw new WikiApiError( r );
@@ -196,7 +199,7 @@ class WikiSet<T extends Wiki = Wiki> extends UncompleteModelSet<T> {
 };
 
 Wiki.registerLoader( {
-	components: [ 'articlepath', 'generator', 'interwikimap', 'lang', 'name', 'server', 'scriptpath', 'statistics', 'url' ],
+	components: [ 'articlepath', 'generator', 'interwikimap', 'lang', 'name', 'server', 'scriptpath', 'siteinfo', 'statistics', 'url' ],
 	async load( set : Wiki|UncompleteModelSet<Wiki>, components : string[] ) {
 		const models : Wiki[] = set instanceof Wiki ? [ set ] : set.models;
 
@@ -217,13 +220,30 @@ Wiki.registerLoader( {
 				siprop: load
 			} ).then( si => {
 				if ( 'general' in si.query ) {
-					model.articlepath = si.query.general.articlepath;
-					model.generator = si.query.general.generator;
-					model.lang = si.query.general.lang;
-					model.name = si.query.general.sitename;
-					model.server = si.query.general.server;
-					model.scriptpath = si.query.general.scriptpath;
-					model.url = Wiki.normalizeURL( model.server + model.scriptpath );
+					function genDescriptor<T extends object>( obj : T, key : keyof T ) : PropertyDescriptor {
+						return {
+							configurable: true,
+							enumerable: true,
+							get() {
+								return obj[key];
+							},
+							set( v ) {
+								obj[key] = v;
+							}
+						};
+					};
+
+					model.siteinfo = si.query.general;
+					model.url = Wiki.normalizeURL( model.siteinfo.server + model.siteinfo.scriptpath );
+
+					Object.defineProperties( model, {
+						articlepath: genDescriptor( model.siteinfo, 'articlepath' ),
+						generator: genDescriptor( model.siteinfo, 'generator' ),
+						lang: genDescriptor( model.siteinfo, 'lang' ),
+						name: genDescriptor( model.siteinfo, 'sitename' ),
+						server: genDescriptor( model.siteinfo, 'server' ),
+						scriptpath: genDescriptor( model.siteinfo, 'scriptpath' ),
+					} );
 				}
 
 				if ( 'interwikimap' in si.query ) {

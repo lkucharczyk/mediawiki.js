@@ -14,7 +14,6 @@ export function uniqueArray<T>( ...arrays : T[][] ) : T[] {
 	return Array.from( new Set( arrays.flat() ) );
 };
 
-
 export class MappedArrays<T> {
 	#object : { [ key : string ] : T[] } = {};
 
@@ -45,4 +44,8 @@ export class MappedArrays<T> {
 	length( key : string ) : number {
 		return this.get( key ).length;
 	}
+};
+
+export function isIterable( obj : { [Symbol.iterator]? : unknown } ) : obj is Iterable<any> {
+	return typeof obj[Symbol.iterator] === 'function';
 };

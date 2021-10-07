@@ -6,7 +6,14 @@ import { UncompleteModelSet } from '../UncompleteModelSet';
 import { Wiki, WikiComponents } from '../Wiki';
 import { FandomFamily } from './FandomFamily';
 import { Loaded } from '../UncompleteModel';
-import { KnownNirvanaRequests, KnownNirvanaResponses, NirvanaErrorResponse, NirvanaRequestBase, NirvanaResponse } from '../../../types/types';
+import {
+	ApiQueryMetaSiteinfoPropGeneral,
+	KnownNirvanaRequests,
+	KnownNirvanaResponses,
+	NirvanaErrorResponse,
+	NirvanaRequestBase,
+	NirvanaResponse
+} from '../../../types/types';
 import { NirvanaError } from './NirvanaError';
 
 interface FandomWikiComponents extends WikiComponents {
@@ -15,6 +22,7 @@ interface FandomWikiComponents extends WikiComponents {
 };
 
 interface FandomWiki extends FandomWikiComponents {
+	siteinfo? : ApiQueryMetaSiteinfoPropGeneral & { gamepedia? : 'true'|'false' };
 	callNirvana<P extends KnownNirvanaRequests>( params : Readonly<P>, options? : RequestInit ) : Promise<KnownNirvanaResponses<P>>;
 	load<T extends keyof FandomWikiComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
 	setLoaded( components : keyof FandomWikiComponents|( keyof FandomWikiComponents )[] ) : void;
@@ -32,7 +40,7 @@ class FandomWiki extends Wiki {
 	public async callNirvanaUnknown<T extends NirvanaResponse = NirvanaResponse>( params : NirvanaRequestBase, options? : RequestInit ) : Promise<T> {
 		params.format = 'json';
 		return this.call( 'wikia.php', this.processApiParams( params, ',' ), options )
-			.then<T|NirvanaErrorResponse>( r => r.json() )
+			.then( r => r.json() as Promise<T|NirvanaErrorResponse> )
 			.then( r => {
 				if ( 'error' in r && r.error !== undefined ) {
 					throw new NirvanaError( r );
