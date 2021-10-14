@@ -1,9 +1,10 @@
 import { ApiQueryResponse } from './ApiResponse';
-import { ApiQueryPropCategories, ApiQueryPropCategoriesProps } from './ApiQueryPropCategories';
+import { ApiQueryPropCategories, ApiQueryPropCategoriesParams, ApiQueryPropCategoriesProps } from './ApiQueryPropCategories';
 import { ApiQueryPropCategoryInfo } from './ApiQueryPropCategoryinfo';
-import { ApiQueryPropImageinfo, ApiQueryPropImageinfoProps } from './ApiQueryPropImageinfo';
-import { ApiQueryPropLanglinks, ApiQueryPropLanglinksProps } from './ApiQueryPropLanglinks';
-import { ApiQueryPropRevisions, ApiQueryPropRevisionsProps } from './ApiQueryPropRevisions';
+import { ApiQueryPropImageinfo, ApiQueryPropImageinfoParams, ApiQueryPropImageinfoProps } from './ApiQueryPropImageinfo';
+import { ApiQueryPropLanglinks, ApiQueryPropLanglinksParams, ApiQueryPropLanglinksProps } from './ApiQueryPropLanglinks';
+import { ApiQueryPropRevisions, ApiQueryPropRevisionsParams, ApiQueryPropRevisionsProps } from './ApiQueryPropRevisions';
+import { ApiQueryPropTemplates, ApiQueryPropTemplatesParams } from './ApiQueryPropTemplates';
 import { ApiQueryRequest } from './ApiRequest';
 import { OnlyOneOf } from '../util';
 
@@ -13,6 +14,7 @@ export interface ApiQueryPageProps {
 	imageinfo? : ApiQueryPropImageinfoProps|true;
 	langlinks? : ApiQueryPropLanglinksProps|true;
 	revisions? : ApiQueryPropRevisionsProps|true;
+	templates? : true;
 }
 
 export interface ApiQueryPagePropsKeys {
@@ -21,6 +23,7 @@ export interface ApiQueryPagePropsKeys {
 	imageinfo : 'iiprop';
 	langlinks : 'llprop';
 	revisions : 'rvprop';
+	templates : never;
 }
 
 export interface ApiQueryMissingPage {
@@ -41,33 +44,30 @@ export type ApiQueryPage<P extends ApiQueryPageProps = {}, M extends boolean = f
 		categoryinfo? : ApiQueryPropCategoryInfo;
 		langlinks? : P['langlinks'] extends string ? ApiQueryPropLanglinks<P['langlinks']> : ApiQueryPropLanglinks;
 		revisions? : P['revisions'] extends string ? ApiQueryPropRevisions<P['revisions']> : ApiQueryPropRevisions;
+		templates? : ApiQueryPropTemplates;
 	}, Exclude<Extract<keyof P, keyof ApiQueryPageProps>, 'imageinfo'>>
 	& ( P extends { imageinfo : string } ? ApiQueryPropImageinfo<P['imageinfo']> : {} )
 	& ( P extends { imageinfo : true } ? ApiQueryPropImageinfo : {} )
 
 type PagePropType<K extends keyof ApiQueryPageProps> = ApiQueryPageProps[K]|readonly (ApiQueryPageProps[K])[];
 
-export type ApiQueryPageRequest = ApiQueryRequest & {
-	prop? : keyof ApiQueryPageProps|readonly ( keyof ApiQueryPageProps )[];
-	limit? : number|'max';
-
-	clprop? : PagePropType<'categories'>;
-
-	iicontinue? : string;
-	iiprop? : PagePropType<'imageinfo'>;
-	iilimit? : number|'max';
-
-	llprop? : PagePropType<'langlinks'>;
-
-	rvcontinue? : string;
-	rvprop? : PagePropType<'revisions'>;
-	rvslots? : string|readonly string[];
-} & OnlyOneOf<{
-	generator : string;
-	titles : string|readonly string[];
-	pageids : number|readonly number[];
-	revids : number|readonly number[];
-}>;
+export type ApiQueryPageRequest =
+	ApiQueryRequest
+	& {
+		prop? : keyof ApiQueryPageProps|readonly ( keyof ApiQueryPageProps )[];
+		limit? : number|'max';
+	}
+	& OnlyOneOf<{
+		generator : string;
+		titles : string|readonly string[];
+		pageids : number|readonly number[];
+		revids : number|readonly number[];
+	}>
+	& ApiQueryPropCategoriesParams
+	& ApiQueryPropImageinfoParams
+	& ApiQueryPropLanglinksParams
+	& ApiQueryPropRevisionsParams
+	& ApiQueryPropTemplatesParams;
 
 export interface ApiQueryPageResponse<P extends ApiQueryPageProps = {}, M extends boolean = false> extends ApiQueryResponse {
 	query : {

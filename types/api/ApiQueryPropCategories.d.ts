@@ -1,5 +1,9 @@
 export type ApiQueryPropCategoriesProps = 'hidden'|'sortkey'|'timestamp';
 
+export interface ApiQueryPropCategoriesParams {
+	clprop? : ApiQueryPropCategoriesProps|readonly ApiQueryPropCategoriesProps[];
+}
+
 export type ApiQueryPropCategories<P extends ApiQueryPropCategoriesProps = never> = (
 	{
 		ns : 14;

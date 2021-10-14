@@ -1,5 +1,11 @@
 export type ApiQueryPropRevisionsProps = 'comment'|'content'|'contentmodel'|'flags'|'ids'|'parsedcomment'|'roles'|'size'|'sha1'|'slotsha1'|'slotsize'|'tags'|'timestamp'|'user'|'userid';
 
+export interface ApiQueryPropRevisionsParams {
+	rvcontinue? : string;
+	rvprop? : ApiQueryPropRevisionsProps|readonly ApiQueryPropRevisionsProps[];
+	rvslots? : string|readonly string[];
+}
+
 export type ApiQueryPropRevisionsSlot<P extends ApiQueryPropRevisionsProps> =
 	( Extract<P, 'content'> extends never ? {} : {
 		content : string;

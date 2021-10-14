@@ -1,5 +1,11 @@
 export type ApiQueryPropImageinfoProps = 'bitdepth'|'canonicaltitle'|'comment'|'commonmetadata'|'mediatype'|'metadata'|'mime'|'parsedcomment'|'sha1'|'size'|'timestamp'|'url'|'user'|'userid';
 
+export interface ApiQueryPropImageinfoParams {
+	iicontinue? : string;
+	iiprop? : ApiQueryPropImageinfoProps|readonly ApiQueryPropImageinfoProps[];
+	iilimit? : number|'max';
+}
+
 interface Metadata {
 	name : string;
 	value : any;
