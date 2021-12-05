@@ -40,16 +40,17 @@ export abstract class UncompleteModel {
 		if ( toload.length ) {
 			for ( const loader of constructor.LOADERS ) {
 				if ( components.find( e => loader.components.includes( e ) ) ) {
+					const match = components.filter( e => loader.components.includes( e ) );
 					let promise : Promise<any>;
 					if ( loader.dependencies ) {
-						promise = this.load( ...loader.dependencies ).then( () => loader.load( this, components ) );
+						promise = this.load( ...loader.dependencies ).then( () => loader.load( this, match ) );
 					} else {
 						promise = loader.load( this, components );
 					}
 
 					promises.push( promise );
 					this.addLoading( components, promise );
-					components = components.filter( e => !loader.components.includes( e ) );
+					components = components.filter( e => !match.includes( e ) );
 				}
 			}
 		}
@@ -156,7 +157,10 @@ export abstract class UncompleteModel {
 		const out : any = {};
 
 		for ( const prop in this ) {
-			if ( typeof this[prop] !== 'object' && typeof this[prop] !== 'function' ) {
+			if (
+				( this.constructor as typeof UncompleteModel ).COMPONENTS.includes( prop )
+				&& typeof this[prop] !== 'function'
+			) {
 				out[prop] = this[prop];
 			}
 		}

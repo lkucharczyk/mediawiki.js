@@ -1,5 +1,6 @@
 import {
 	ApiErrorResponse,
+	ApiQueryListAllusersCriteria,
 	ApiQueryMetaSiteinfoPropGeneral,
 	ApiQueryMetaSiteinfoPropInterwikimap,
 	ApiQueryMetaSiteinfoProps,
@@ -16,7 +17,7 @@ import { WikiFamily } from './WikiFamily';
 import { WikiNetwork } from './WikiNetwork';
 import { WikiUser, WikiUserSet } from './WikiUser';
 import { WikiApiError } from './WikiApiError';
-import { isIterable } from '../util/util';
+import { isIterable, prefixKeys } from '../util/util';
 
 interface WikiComponents {
 	articlepath? : string;
@@ -180,12 +181,37 @@ class Wiki extends UncompleteModel {
 		return this.family;
 	}
 
-	public getUser( name : string|number ) : WikiUser {
-		return new WikiUser( name, this );
+	public getUser<T extends string|number>( name : T ) : T extends number ? Loaded<WikiUser, 'id'> : Loaded<WikiUser, 'name'> {
+		return new WikiUser( name, this ) as T extends number ? Loaded<WikiUser, 'id'> : Loaded<WikiUser, 'name'>;
 	}
 
 	public getUsers( names : (string|number)[] ) : WikiUserSet {
 		return new WikiUserSet( names.map( e => this.getUser( e ) ) );
+	}
+
+	public async fetchUsers( criteria : ApiQueryListAllusersCriteria = {} ) : Promise<Loaded<WikiUser, 'id'|'name'>[]> {
+		const users : Loaded<WikiUser, 'id'|'name'>[] = [];
+		let aufrom : string|undefined;
+
+		do {
+			const res = await this.callApi( {
+				action: 'query',
+				list: 'allusers',
+				aufrom,
+				...prefixKeys( criteria, 'au' )
+			} );
+
+			for ( const u of res.query.allusers ) {
+				const user = this.getUser( u.name );
+				user.id = u.userid;
+				user.setLoaded( 'id' );
+				users.push( user as Loaded<WikiUser, 'id'|'name'> );
+			}
+
+			aufrom = res.continue?.aufrom;
+		} while ( aufrom );
+
+		return users;
 	}
 }
 

@@ -65,7 +65,7 @@ type RecentChange<P extends ApiQueryListRecentChangesProps> =
 
 type EditRecentChange<P extends ApiQueryListRecentChangesProps> =
 	RecentChange<P>
-	& { type: 'edit'|'new' }
+	& { type: 'categorize'|'edit'|'external'|'new' }
 	& ( Extract<P, 'sha1'> extends never ? {} : { sha1 : string } );
 
 type LogRecentChange<P extends ApiQueryListRecentChangesProps> =
@@ -79,16 +79,24 @@ type LogRecentChange<P extends ApiQueryListRecentChangesProps> =
 	} )
 	& ( Extract<P, 'sha1'> extends never ? {} : { sha1? : string } );
 
-export interface ApiQueryListRecentChangesResponse<P extends ApiQueryListRecentChangesProps = 'ids'|'timestamp'|'title'> extends ApiQueryResponse {
+export interface ApiQueryListRecentChangesResponse<T extends ApiQueryListRecentChangesType = ApiQueryListRecentChangesType, P extends ApiQueryListRecentChangesProps = 'ids'|'timestamp'|'title'> extends ApiQueryResponse {
 	query : {
-		recentchanges : ( EditRecentChange<P>|LogRecentChange<P> )[];
+		recentchanges : (
+			( Extract<T, 'log'> extends never ? never : LogRecentChange<P> )
+			| ( Exclude<T, 'log'> extends never ? never : EditRecentChange<P> )
+		)[];
 	};
 	continue? : {
 		rccontinue? : string;
 	};
 }
 
+type ExtractType<V extends ApiQueryListRecentChangesType|undefined|readonly ApiQueryListRecentChangesType[]> =
+	Exclude<V, undefined> extends string
+		? Extract<V, ApiQueryListRecentChangesType>
+		: V extends ApiQueryListRecentChangesType[] ? V[number] : ApiQueryListRecentChangesType;
+
 export type ApiQueryListRecentChangesRequestResponse<T extends ApiQueryListRecentChangesRequest> =
-	T['rcprop'] extends ApiQueryListRecentChangesProps ? ApiQueryListRecentChangesResponse<T['rcprop']> :
-	T['rcprop'] extends readonly ApiQueryListRecentChangesProps[] ? ApiQueryListRecentChangesResponse<T['rcprop'][number]>
-		: ApiQueryListRecentChangesResponse;
+	T['rcprop'] extends ApiQueryListRecentChangesProps ? ApiQueryListRecentChangesResponse<ExtractType<T['rctype']>, T['rcprop']> :
+	T['rcprop'] extends readonly ApiQueryListRecentChangesProps[] ? ApiQueryListRecentChangesResponse<ExtractType<T['rctype']>, T['rcprop'][number]>
+		: ApiQueryListRecentChangesResponse<ExtractType<T['rctype']>>;

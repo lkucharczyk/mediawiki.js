@@ -21,4 +21,5 @@ export interface ApiQueryResponse extends ApiResponse {
 	continue? : {
 		[ k : string ] : number|string|undefined;
 	};
+	limits?: Partial<Record<string, number>>;
 }

@@ -2,6 +2,7 @@ export * from './api/ApiParse';
 export * from './api/ApiQueryListAllpages';
 export * from './api/ApiQueryListAllusers';
 export * from './api/ApiQueryListCategorymembers';
+export * from './api/ApiQueryListLogevents';
 export * from './api/ApiQueryListQuerypage';
 export * from './api/ApiQueryListRecentchanges';
 export * from './api/ApiQueryListUsers';

@@ -7,6 +7,7 @@ import { Wiki, WikiComponents } from '../Wiki';
 import { FandomFamily } from './FandomFamily';
 import { Loaded } from '../UncompleteModel';
 import {
+	ApiQueryListAllusersCriteria,
 	ApiQueryMetaSiteinfoPropGeneral,
 	KnownNirvanaRequests,
 	KnownNirvanaResponses,
@@ -24,6 +25,7 @@ interface FandomWikiComponents extends WikiComponents {
 interface FandomWiki extends FandomWikiComponents {
 	siteinfo? : ApiQueryMetaSiteinfoPropGeneral & { gamepedia? : 'true'|'false' };
 	callNirvana<P extends KnownNirvanaRequests>( params : Readonly<P>, options? : RequestInit ) : Promise<KnownNirvanaResponses<P>>;
+	fetchUsers( criteria : ApiQueryListAllusersCriteria ) : Promise<Loaded<FandomUser, 'id'|'name'>[]>;
 	load<T extends keyof FandomWikiComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
 	setLoaded( components : keyof FandomWikiComponents|( keyof FandomWikiComponents )[] ) : void;
 };
@@ -58,8 +60,8 @@ class FandomWiki extends Wiki {
 		return this.family;
 	}
 
-	public getUser( name : string|number ) : FandomUser {
-		return new FandomUser( name, this );
+	public getUser<T extends string|number>( name : T ) : T extends number ? Loaded<FandomUser, 'id'> : Loaded<FandomUser, 'name'> {
+		return new FandomUser( name, this ) as T extends number ? Loaded<FandomUser, 'id'> : Loaded<FandomUser, 'name'>;
 	}
 
 	public getUsers( names : (string|number)[] ) : FandomUserSet {

@@ -1,3 +1,5 @@
+import { PrefixKeys } from '../../types/util.js';
+
 export * from './FetchManager';
 
 export function chunkArray<T>( array : T[], chunk : number ) : T[][] {
@@ -49,3 +51,13 @@ export class MappedArrays<T> {
 export function isIterable( obj : { [Symbol.iterator]? : unknown } ) : obj is Iterable<any> {
 	return typeof obj[Symbol.iterator] === 'function';
 };
+
+export function prefixKeys<T, P extends string>( obj : T, prefix : P ) : PrefixKeys<T, P> {
+	const out : Record<string, unknown> = {};
+
+	for ( const key in obj ) {
+		out[prefix + key] = obj[key];
+	}
+
+	return out as PrefixKeys<T, P>;
+}

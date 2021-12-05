@@ -7,6 +7,7 @@ import { ApiQueryListUsersRequest, ApiQueryListUsersRequestResponse } from './Ap
 import { ApiQueryPageRequest, ApiQueryPageRequestResponse } from './ApiQueryPage';
 import { ApiQueryListAllusersRequest, ApiQueryListAllusersRequestResponse } from './ApiQueryListAllusers';
 import { ApiQueryListRecentChangesRequest, ApiQueryListRecentChangesRequestResponse } from './ApiQueryListRecentchanges';
+import { ApiQueryListLogeventsRequest, ApiQueryListLogeventsRequestResponse } from './ApiQueryListLogevents';
 import { ApiQueryListQuerypageRequest, ApiQueryListQuerypageResponse } from './ApiQueryListQuerypage';
 import { ApiQueryListAllpagesRequest, ApiQueryListAllpagesResponse } from './ApiQueryListAllpages';
 import { ApiQueryMetaAllmessagesRequest, ApiQueryMetaAllmessagesResponse } from './ApiQueryMetaAllmessages';
@@ -34,6 +35,7 @@ interface KnownApiRequestsObj {
 	Parse                  : ApiParseRequest;
 	QueryListAllpages      : ApiQueryListAllpagesRequest;
 	QueryListAllusers      : ApiQueryListAllusersRequest;
+	QueryListLogevents     : ApiQueryListLogeventsRequest;
 	QueryListQuerypage     : ApiQueryListQuerypageRequest;
 	QueryListRecentChanges : ApiQueryListRecentChangesRequest;
 	QueryListUsers         : ApiQueryListUsersRequest;
@@ -52,6 +54,7 @@ interface KnownApiResponsesObj<T extends ApiRequestBase> {
 	Parse                  : T extends ApiParseRequest ? ApiParseRequestResponse<T> : never;
 	QueryListAllpages      : T extends ApiQueryListAllpagesRequest ? ApiQueryListAllpagesResponse : never;
 	QueryListAllusers      : T extends ApiQueryListAllusersRequest ? ApiQueryListAllusersRequestResponse<T> : never;
+	QueryListLogevents     : T extends ApiQueryListLogeventsRequest ? ApiQueryListLogeventsRequestResponse<T> : never;
 	QueryListQuerypage     : T extends ApiQueryListQuerypageRequest ? ApiQueryListQuerypageResponse : never;
 	QueryListRecentChanges : T extends ApiQueryListRecentChangesRequest ? ApiQueryListRecentChangesRequestResponse<T> : never;
 	QueryListUsers         : T extends ApiQueryListUsersRequest ? ApiQueryListUsersRequestResponse<T> : never;

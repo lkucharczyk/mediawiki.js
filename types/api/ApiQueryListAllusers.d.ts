@@ -1,23 +1,27 @@
 import { ApiQueryResponse } from './ApiResponse';
 import { ApiQueryUser } from './ApiQueryListUsers';
 import { ApiQueryRequest } from './ApiRequest';
+import { PrefixKeys } from '../util';
 
 // Not every list=users prop is supported by list=allusers
 export type ApiQueryListAllusersProps = 'editcount'|'groups'|'implicitgroups'|'registration'|'rights';
 
-export interface ApiQueryListAllusersRequest extends ApiQueryRequest {
+export interface ApiQueryListAllusersCriteria {
+	activeusers? : 'true';
+	excludegroup? : string|readonly string[];
+	from? : string;
+	group? : string|readonly string[];
+	limit? : number|'max';
+	prefix? : string;
+	rights? : string|readonly string[];
+	to? : string;
+	witheditsonly? : 'true';
+}
+
+export interface ApiQueryListAllusersRequest extends ApiQueryRequest, PrefixKeys<ApiQueryListAllusersCriteria, 'au'> {
 	list : 'allusers';
-	auactiveusers? : 'true';
 	audir? : 'ascending'|'descending';
-	auexcludegroup? : string|readonly string[];
-	aufrom? : string;
-	augroup? : string|readonly string[];
-	aulimit? : number|'max';
-	auprefix? : string;
 	auprop? : ApiQueryListAllusersProps|readonly ApiQueryListAllusersProps[];
-	aurights? : string|readonly string[];
-	auto? : string;
-	auwitheditsonly? : 'true';
 }
 
 export interface ApiQueryListAllusersResponse<P extends ApiQueryListAllusersProps = never> extends ApiQueryResponse {
