@@ -2,7 +2,9 @@ import { Fandom } from './Fandom';
 import { FandomWiki } from './FandomWiki';
 import { WikiUser, WikiUserComponents, WikiUserSet } from '../WikiUser';
 import { chunkArray } from '../../util/util';
-import { Loaded } from '../UncompleteModel';
+import { Wiki } from '../Wiki';
+import type { Loaded } from '../UncompleteModel';
+import type { ApiQueryListAllusersCriteria } from '../../../types/types';
 
 interface FandomUserComponents extends WikiUserComponents {
 	avatar? : string;
@@ -16,8 +18,14 @@ interface FandomUser extends FandomUserComponents {
 };
 
 class FandomUser extends WikiUser {
-	public constructor( name : string|number, wiki : FandomWiki ) {
-		super( name, wiki );
+	public constructor( wiki : FandomWiki, name : string|number ) {
+		super( wiki, name );
+	}
+
+	public static fetch( wiki: Wiki, criteria?: ApiQueryListAllusersCriteria ): never;
+	public static fetch( wiki: FandomWiki, criteria?: ApiQueryListAllusersCriteria ): Promise<Loaded<FandomUser, 'id'|'name'>[]>;
+	public static async fetch( wiki: FandomWiki, criteria: ApiQueryListAllusersCriteria = {} ) {
+		return WikiUser.fetch<FandomWiki, FandomUser>( wiki, criteria );
 	}
 };
 
@@ -56,4 +64,5 @@ const FandomUserLoader = {
 FandomUser.registerLoader( ...WikiUser.LOADERS, FandomUserLoader );
 FandomUserSet.registerLoader( ...WikiUserSet.LOADERS, FandomUserLoader );
 
-export { FandomUser, FandomUserComponents, FandomUserSet };
+export { FandomUser, FandomUserSet };
+export type { FandomUserComponents };

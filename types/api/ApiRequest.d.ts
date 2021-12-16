@@ -11,8 +11,9 @@ import { ApiQueryListLogeventsRequest, ApiQueryListLogeventsRequestResponse } fr
 import { ApiQueryListQuerypageRequest, ApiQueryListQuerypageResponse } from './ApiQueryListQuerypage';
 import { ApiQueryListAllpagesRequest, ApiQueryListAllpagesResponse } from './ApiQueryListAllpages';
 import { ApiQueryMetaAllmessagesRequest, ApiQueryMetaAllmessagesResponse } from './ApiQueryMetaAllmessages';
-import { ApiUploadRequest } from './ApiUpload';
 import { ApiEditRequest } from './ApiEdit';
+import { ApiImportRequest, ApiImportResponse } from './ApiImport';
+import { ApiUploadRequest } from './ApiUpload';
 import { UnionToIntersection } from '../util';
 
 export interface ApiRequestBase {
@@ -32,6 +33,7 @@ export interface ApiQueryRequest extends ApiRequestBase {
 // Object to allow external augementation
 interface KnownApiRequestsObj {
 	Edit                   : ApiEditRequest;
+	Import                 : ApiImportRequest;
 	Parse                  : ApiParseRequest;
 	QueryListAllpages      : ApiQueryListAllpagesRequest;
 	QueryListAllusers      : ApiQueryListAllusersRequest;
@@ -52,6 +54,7 @@ export type KnownApiRequests = KnownApiRequestsObj[keyof KnownApiRequestsObj];
 // Object to allow external augementation
 interface KnownApiResponsesObj<T extends ApiRequestBase> {
 	Parse                  : T extends ApiParseRequest ? ApiParseRequestResponse<T> : never;
+	Import                 : T extends ApiImportRequest ? ApiImportResponse : never;
 	QueryListAllpages      : T extends ApiQueryListAllpagesRequest ? ApiQueryListAllpagesResponse : never;
 	QueryListAllusers      : T extends ApiQueryListAllusersRequest ? ApiQueryListAllusersRequestResponse<T> : never;
 	QueryListLogevents     : T extends ApiQueryListLogeventsRequest ? ApiQueryListLogeventsRequestResponse<T> : never;

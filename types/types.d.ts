@@ -1,3 +1,5 @@
+export * from './api/ApiEdit';
+export * from './api/ApiImport';
 export * from './api/ApiParse';
 export * from './api/ApiQueryListAllpages';
 export * from './api/ApiQueryListAllusers';

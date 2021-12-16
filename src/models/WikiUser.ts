@@ -1,4 +1,5 @@
-import { ApiQueryUser } from '../../types/types';
+import { ApiQueryListAllusersCriteria, ApiQueryUser } from '../../types/types';
+import { prefixKeys } from '../util/util';
 import { Loaded, UncompleteModel } from "./UncompleteModel";
 import { UncompleteModelSet } from './UncompleteModelSet';
 import { Wiki } from "./Wiki";
@@ -19,7 +20,7 @@ class WikiUser extends UncompleteModel {
 	public network? : WikiNetwork;
 	public wiki : Wiki;
 
-	public constructor( name : number|string, wiki : Wiki ) {
+	public constructor( wiki : Wiki, name : number|string ) {
 		super();
 
 		this.network = wiki.network;
@@ -36,7 +37,7 @@ class WikiUser extends UncompleteModel {
 
 	public async getURL( params? : Record<string, string> ) : Promise<string> {
 		await this.load( 'name' );
-		return this.wiki.getWikiURL( `User:${ this.name }`, params );
+		return this.wiki.getWikiURL( `User:${ this.name! }`, params );
 	}
 
 	public clear() : void {
@@ -49,6 +50,34 @@ class WikiUser extends UncompleteModel {
 		if ( this.name ) {
 			this.setLoaded( 'name' );
 		}
+	}
+
+	public static async fetch<W extends Wiki, U extends WikiUser>( wiki: W, criteria: ApiQueryListAllusersCriteria = {} ) : Promise<Loaded<U, 'id'|'name'>[]> {
+		const users : Loaded<U, 'id'|'name'>[] = [];
+		let aufrom : string|undefined;
+
+		criteria ??= {};
+		criteria.limit ??= 'max';
+
+		do {
+			const res = await wiki.callApi( {
+				action: 'query',
+				list: 'allusers',
+				aufrom,
+				...prefixKeys( criteria, 'au' )
+			} );
+
+			for ( const u of res.query.allusers ) {
+				users.push( wiki.getUser( {
+					id: u.userid,
+					name: u.name
+				} ) as Loaded<U, 'id'|'name'>);
+			}
+
+			aufrom = res.continue?.aufrom;
+		} while ( typeof criteria.limit !== 'number' && aufrom );
+
+		return users;
 	}
 };
 
@@ -119,4 +148,5 @@ const WikiUserLoader = {
 WikiUser.registerLoader( WikiUserLoader );
 WikiUserSet.registerLoader( WikiUserLoader );
 
-export { WikiUser, WikiUserComponents, WikiUserSet };
+export { WikiUser, WikiUserSet };
+export type { WikiUserComponents };

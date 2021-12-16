@@ -25,6 +25,18 @@ type ApiQueryMetaSiteinfoPropInterwikimap = {
 	url : string;
 }[];
 
+type ApiQueryMetaSiteinfoPropNamespaces = Record<string, {
+	canonical?: string,
+	case: 'first-letter'|'case-sensitive',
+	content: boolean,
+	defaultcontentmodel?: string,
+	id: number,
+	name: string,
+	namespaceprotection?: string,
+	nonincludable: boolean,
+	subpages: boolean
+}>;
+
 interface ApiQueryMetaSiteinfoPropStatistics {
 	activeusers : number;
 	admins : number;
@@ -36,7 +48,7 @@ interface ApiQueryMetaSiteinfoPropStatistics {
 	users : number;
 }
 
-export type ApiQueryMetaSiteinfoProps = 'general'|'interwikimap'|'statistics';
+export type ApiQueryMetaSiteinfoProps = 'general'|'interwikimap'|'namespaces'|'statistics';
 
 export interface ApiQueryMetaSiteinfoRequest extends ApiQueryRequest {
 	meta : 'siteinfo';
@@ -44,10 +56,11 @@ export interface ApiQueryMetaSiteinfoRequest extends ApiQueryRequest {
 }
 
 export interface ApiQueryMetaSiteinfoResponse<P extends ApiQueryMetaSiteinfoProps = 'general'> extends ApiQueryResponse {
-	query : Pick<{
-		general : ApiQueryMetaSiteinfoPropGeneral;
-		interwikimap : ApiQueryMetaSiteinfoPropInterwikimap;
-		statistics : ApiQueryMetaSiteinfoPropStatistics;
+	query: Pick<{
+		general: ApiQueryMetaSiteinfoPropGeneral;
+		interwikimap: ApiQueryMetaSiteinfoPropInterwikimap;
+		namespaces: ApiQueryMetaSiteinfoPropNamespaces;
+		statistics: ApiQueryMetaSiteinfoPropStatistics;
 	}, P>;
 }
 

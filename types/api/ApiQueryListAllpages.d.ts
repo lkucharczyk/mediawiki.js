@@ -1,24 +1,28 @@
 import { ApiQueryResponse } from './ApiResponse';
 import { ApiQueryPage } from './ApiQueryPage';
 import { ApiQueryRequest } from './ApiRequest';
+import { PrefixKeys } from '../util';
 
-export interface ApiQueryListAllpagesRequest extends ApiQueryRequest {
+export interface ApiQueryListAllpagesCriteria {
+	dir?: 'ascending'|'descending';
+	filterredir?: 'all'|'nonredirects'|'redirects';
+	filterlanglinks?: 'all'|'withlanglinks'|'withoutlanglinks';
+	from?: string;
+	limit?: number|'max';
+	maxsize?: number;
+	minsize?: number;
+	namespace?: number;
+	prexpiry?: 'all'|'definite'|'indefinite';
+	prefix?: string;
+	prfiltercascade?: 'all'|'cascading'|'noncascading';
+	prlevel?: string|readonly string[];
+	prtype?: string|readonly string[];
+	to?: string;
+}
+
+export interface ApiQueryListAllpagesRequest extends ApiQueryRequest, PrefixKeys<ApiQueryListAllpagesCriteria, 'ap'> {
 	list : 'allpages';
 	apcontinue? : string;
-	apdir? : 'ascending'|'descending';
-	apfilterlanglinks? : 'all'|'withlanglinks'|'withoutlanglinks';
-	apfilterredir? : 'all'|'nonredirects'|'redirects';
-	apfrom? : number;
-	aplimit? : number|'max';
-	apmaxsize? : number;
-	apminsize? : number;
-	apnamespace? : number;
-	apprefix? : string;
-	apprexpiry? : 'all'|'definite'|'indefinite';
-	apprfiltercascade? : 'all'|'cascading'|'noncascading';
-	apprlevel? : string|readonly string[];
-	apprtype? : string|readonly string[];
-	apto? : string;
 }
 
 export interface ApiQueryListAllpagesResponse extends ApiQueryResponse {

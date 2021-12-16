@@ -1,5 +1,5 @@
 import { Fandom } from './Fandom';
-import { FandomUser, FandomUserSet } from './FandomUser';
+import { FandomUser, FandomUserComponents, FandomUserSet } from './FandomUser';
 import { chunkArray, FetchManager, FetchManagerOptions } from '../../util/util';
 import { RequestInit } from 'node-fetch';
 import { UncompleteModelSet } from '../UncompleteModelSet';
@@ -7,7 +7,6 @@ import { Wiki, WikiComponents } from '../Wiki';
 import { FandomFamily } from './FandomFamily';
 import { Loaded } from '../UncompleteModel';
 import {
-	ApiQueryListAllusersCriteria,
 	ApiQueryMetaSiteinfoPropGeneral,
 	KnownNirvanaRequests,
 	KnownNirvanaResponses,
@@ -16,6 +15,7 @@ import {
 	NirvanaResponse
 } from '../../../types/types';
 import { NirvanaError } from './NirvanaError';
+import { FetchSubmodels, GetSubmodel, submodel } from '../../util/submodel';
 
 interface FandomWikiComponents extends WikiComponents {
 	id? : number;
@@ -25,14 +25,19 @@ interface FandomWikiComponents extends WikiComponents {
 interface FandomWiki extends FandomWikiComponents {
 	siteinfo? : ApiQueryMetaSiteinfoPropGeneral & { gamepedia? : 'true'|'false' };
 	callNirvana<P extends KnownNirvanaRequests>( params : Readonly<P>, options? : RequestInit ) : Promise<KnownNirvanaResponses<P>>;
-	fetchUsers( criteria : ApiQueryListAllusersCriteria ) : Promise<Loaded<FandomUser, 'id'|'name'>[]>;
 	load<T extends keyof FandomWikiComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
 	setLoaded( components : keyof FandomWikiComponents|( keyof FandomWikiComponents )[] ) : void;
+
+	getUser: GetSubmodel<FandomUser, FandomUserComponents, 'name'>;
+	fetchUsers: FetchSubmodels<( typeof FandomUser )['fetch']>;
 };
 
+@submodel<typeof FandomWiki, typeof FandomUser, FandomUserComponents>( FandomUser, 'User' )
 class FandomWiki extends Wiki {
 	public readonly network : Fandom;
 	public family? : FandomFamily;
+
+	public url!: string;
 
 	constructor( network : Fandom, entrypoint : string, fetchManager? : FetchManager|FetchManagerOptions, requestOptions? : RequestInit ) {
 		super( entrypoint, fetchManager, requestOptions );
@@ -52,6 +57,17 @@ class FandomWiki extends Wiki {
 			} );
 	}
 
+	public getKey(): string {
+		const url = new URL( this.url );
+
+		const domain = url.hostname.replace( Fandom.REGEXP_DOMAIN, '' );
+		const lang = url.pathname.split( '/' )[1] ?? '';
+
+		return lang !== 'en' && Fandom.REGEXP_LANG.test( lang )
+			? `${ lang }.${ domain }`
+			: domain;
+	}
+
 	public getFamily( strict : boolean = true ) : FandomFamily {
 		if ( !this.family ) {
 			this.family = new FandomFamily( this, strict );
@@ -60,12 +76,11 @@ class FandomWiki extends Wiki {
 		return this.family;
 	}
 
-	public getUser<T extends string|number>( name : T ) : T extends number ? Loaded<FandomUser, 'id'> : Loaded<FandomUser, 'name'> {
-		return new FandomUser( name, this ) as T extends number ? Loaded<FandomUser, 'id'> : Loaded<FandomUser, 'name'>;
-	}
-
 	public getUsers( names : (string|number)[] ) : FandomUserSet {
-		return new FandomUserSet( names.map( e => this.getUser( e ) ) );
+		return new FandomUserSet( names.map( e => this.getUser( {
+			id:1,
+
+		} ).fromJSON( {} ) ) );
 	}
 
 	public clear() : void {
@@ -139,4 +154,6 @@ const FandomWikiWDLoader = {
 FandomWiki.registerLoader( ...Wiki.LOADERS, FandomWikiMWVLoader, FandomWikiWDLoader );
 FandomWikiSet.registerLoader( FandomWikiWDLoader );
 
-export { FandomWiki, FandomWikiComponents, FandomWikiSet };
+export { FandomWiki, FandomWikiSet };
+export type { FandomWikiComponents };
+

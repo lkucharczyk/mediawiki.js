@@ -1,8 +1,8 @@
 import {
 	ApiErrorResponse,
-	ApiQueryListAllusersCriteria,
 	ApiQueryMetaSiteinfoPropGeneral,
 	ApiQueryMetaSiteinfoPropInterwikimap,
+	ApiQueryMetaSiteinfoPropNamespaces,
 	ApiQueryMetaSiteinfoProps,
 	ApiQueryMetaSiteinfoPropStatistics,
 	ApiRequestBase,
@@ -10,14 +10,17 @@ import {
 	KnownApiRequests,
 } from '../../types/types';
 import { FetchManager, FetchManagerOptions } from '../util/FetchManager';
-import { Headers, RequestInit, Response } from 'node-fetch';
+import { FetchError, Headers, RequestInit, Response } from 'node-fetch';
 import { Loaded, UncompleteModel } from './UncompleteModel';
 import { UncompleteModelSet } from './UncompleteModelSet';
 import { WikiFamily } from './WikiFamily';
 import { WikiNetwork } from './WikiNetwork';
-import { WikiUser, WikiUserSet } from './WikiUser';
+import { WikiUser, WikiUserComponents, WikiUserSet } from './WikiUser';
 import { WikiApiError } from './WikiApiError';
-import { isIterable, prefixKeys } from '../util/util';
+import { isIterable } from '../util/util';
+import { FetchSubmodels, GetSubmodel, submodel } from '../util/submodel';
+import { WikiPage, WikiPageComponents } from './WikiPage';
+import FormData from 'form-data';
 
 interface WikiComponents {
 	articlepath? : string;
@@ -25,24 +28,34 @@ interface WikiComponents {
 	interwikimap? : ApiQueryMetaSiteinfoPropInterwikimap;
 	lang? : string;
 	name? : string;
+	namespaces?: ApiQueryMetaSiteinfoPropNamespaces;
 	server? : string;
 	scriptpath? : string;
 	siteinfo? : ApiQueryMetaSiteinfoPropGeneral;
 	statistics? : ApiQueryMetaSiteinfoPropStatistics;
-	url : string;
+	url? : string;
 };
 
 interface Wiki extends WikiComponents {
 	callApi<P extends KnownApiRequests>( params : Readonly<P>, options? : RequestInit ) : Promise<ApiRequestResponse<P>>;
 	load<T extends keyof WikiComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
 	setLoaded( components : keyof WikiComponents|( keyof WikiComponents )[] ) : void;
+
+	getPage: GetSubmodel<WikiPage, WikiPageComponents, 'title'>;
+	getUser: GetSubmodel<WikiUser, WikiUserComponents, 'name'>;
+	fetchPages: FetchSubmodels<( typeof WikiPage )['fetch']>;
+	fetchUsers: FetchSubmodels<( typeof WikiUser )['fetch']>;
 };
 
+@submodel<typeof Wiki, typeof WikiPage, WikiPageComponents>( WikiPage, 'page' )
+@submodel<typeof Wiki, typeof WikiUser, WikiUserComponents>( WikiUser, 'user' )
 class Wiki extends UncompleteModel {
 	public readonly entrypoint : string;
 	public family? : WikiFamily;
 	public network? : WikiNetwork;
 	public requestOptions : RequestInit;
+
+	public url: string;
 
 	protected readonly fetchManager : FetchManager;
 
@@ -113,23 +126,33 @@ class Wiki extends UncompleteModel {
 		let callParams : Record<string, string> = this.processApiParams( params );
 		options = options ?? {};
 
-		if ( options?.method === 'POST' && options?.body === undefined ) {
-			options.body = new URLSearchParams( callParams ).toString();
-			options.headers ??= {};
+		if ( options?.method === 'POST' ) {
+			if ( options?.body === undefined ) {
+				options.body = new URLSearchParams( callParams ).toString();
+				options.headers ??= {};
 
-			if ( options.headers instanceof Headers ) {
-				options.headers.set( 'Content-Type', 'application/x-www-form-urlencoded' );
-			} else if ( Array.isArray( options.headers ) ) {
-				options.headers.push( [ 'Content-Type', 'application/x-www-form-urlencoded' ] );
-			} else if ( !isIterable( options.headers ) ) {
-				options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+				if ( options.headers instanceof Headers ) {
+					options.headers.set( 'Content-Type', 'application/x-www-form-urlencoded' );
+				} else if ( Array.isArray( options.headers ) ) {
+					options.headers.push( [ 'Content-Type', 'application/x-www-form-urlencoded' ] );
+				} else if ( !isIterable( options.headers ) ) {
+					options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+				}
+
+				callParams = {};
+			} else if ( options.body instanceof FormData ) {
+				for ( const key in params ) {
+					options.body.append( key, params[key] )
+				}
 			}
 
 			callParams = {};
 		}
 
 		return this.call( 'api.php', callParams, options )
-			.then( r => r.json() as Promise<R|ApiErrorResponse> )
+			.then( r => r.json().catch( e =>{
+				throw e instanceof FetchError ? Object.assign( e, { response: r } ) : e
+			} ) as Promise<R|ApiErrorResponse> )
 			.then( r => {
 				if ( 'error' in r ) {
 					throw new WikiApiError( r );
@@ -181,37 +204,8 @@ class Wiki extends UncompleteModel {
 		return this.family;
 	}
 
-	public getUser<T extends string|number>( name : T ) : T extends number ? Loaded<WikiUser, 'id'> : Loaded<WikiUser, 'name'> {
-		return new WikiUser( name, this ) as T extends number ? Loaded<WikiUser, 'id'> : Loaded<WikiUser, 'name'>;
-	}
-
 	public getUsers( names : (string|number)[] ) : WikiUserSet {
 		return new WikiUserSet( names.map( e => this.getUser( e ) ) );
-	}
-
-	public async fetchUsers( criteria : ApiQueryListAllusersCriteria = {} ) : Promise<Loaded<WikiUser, 'id'|'name'>[]> {
-		const users : Loaded<WikiUser, 'id'|'name'>[] = [];
-		let aufrom : string|undefined;
-
-		do {
-			const res = await this.callApi( {
-				action: 'query',
-				list: 'allusers',
-				aufrom,
-				...prefixKeys( criteria, 'au' )
-			} );
-
-			for ( const u of res.query.allusers ) {
-				const user = this.getUser( u.name );
-				user.id = u.userid;
-				user.setLoaded( 'id' );
-				users.push( user as Loaded<WikiUser, 'id'|'name'> );
-			}
-
-			aufrom = res.continue?.aufrom;
-		} while ( aufrom );
-
-		return users;
 	}
 }
 
@@ -225,7 +219,7 @@ class WikiSet<T extends Wiki = Wiki> extends UncompleteModelSet<T> {
 };
 
 Wiki.registerLoader( {
-	components: [ 'articlepath', 'generator', 'interwikimap', 'lang', 'name', 'server', 'scriptpath', 'siteinfo', 'statistics', 'url' ],
+	components: [ 'articlepath', 'generator', 'interwikimap', 'lang', 'name', 'namespaces', 'server', 'scriptpath', 'siteinfo', 'statistics', 'url' ],
 	async load( set : Wiki|UncompleteModelSet<Wiki>, components : string[] ) {
 		const models : Wiki[] = set instanceof Wiki ? [ set ] : set.models;
 
@@ -233,6 +227,10 @@ Wiki.registerLoader( {
 
 		if ( components.includes( 'interwikimap' ) ) {
 			load.push( 'interwikimap' );
+		}
+
+		if ( components.includes( 'namespaces' ) ) {
+			load.push( 'namespaces' );
 		}
 
 		if ( components.includes( 'statistics' ) ) {
@@ -276,6 +274,10 @@ Wiki.registerLoader( {
 					model.interwikimap = si.query.interwikimap;
 				}
 
+				if ( 'namespaces' in si.query ) {
+					model.namespaces = si.query.namespaces;
+				}
+
 				if ( 'statistics' in si.query ) {
 					model.statistics = si.query.statistics;
 				}
@@ -286,4 +288,5 @@ Wiki.registerLoader( {
 	}
 } );
 
-export { Wiki, WikiComponents, WikiSet }
+export { Wiki, WikiSet };
+export type { WikiComponents };
