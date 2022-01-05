@@ -6,8 +6,10 @@ import { Wiki } from '../Wiki';
 import type { Loaded } from '../UncompleteModel';
 import type { ApiQueryListAllusersCriteria } from '../../../types/types';
 
+type FandomUserAttribute = 'bio'|'discordHandle'|'fbPage'|'name'|'twitter'|'website';
 interface FandomUserComponents extends WikiUserComponents {
-	avatar? : string;
+	attributes?: Partial<Record<FandomUserAttribute, string>>,
+	avatar?: string
 };
 
 interface FandomUser extends FandomUserComponents {
@@ -59,10 +61,47 @@ const FandomUserLoader = {
 			} )
 		) ).then( () => this.components );
 	}
-}
+};
 
 FandomUser.registerLoader( ...WikiUser.LOADERS, FandomUserLoader );
 FandomUserSet.registerLoader( ...WikiUserSet.LOADERS, FandomUserLoader );
+
+FandomUser.registerLoader( {
+	components: [ 'attributes', 'avatar', 'name' ],
+	dependencies: [ 'id' ],
+	async load( model: Loaded<FandomUser, 'id'> ) {
+		model.attributes = {};
+		if ( model.exists === false || !model.id ) {
+			return;
+		}
+
+		const res = await model.network.callServices( '/user-attribute/user/' + model.id ) as {
+			_embedded: {
+				properties: {
+					name: string,
+					value: string
+				}[]
+			}
+		};
+
+		const match: FandomUserAttribute[] = [ 'bio', 'discordHandle', 'fbPage', 'name', 'twitter', 'website' ];
+		const check = match.includes.bind( match ) as ( v: any ) => v is FandomUserAttribute;
+
+		for ( const { name, value } of res._embedded.properties ) {
+			if ( !value ) {
+				continue;
+			}
+
+			if ( check( name ) ) {
+				model.attributes[name] = value;
+			} else if ( name === 'avatar' ) {
+				model.avatar = value;
+			} else if ( name === 'username' ) {
+				model.name = value;
+			}
+		}
+	}
+} );
 
 export { FandomUser, FandomUserSet };
 export type { FandomUserComponents };

@@ -96,6 +96,10 @@ class Wiki extends UncompleteModel {
 			requestOptions.headers = Object.assign( {}, this.requestOptions.headers, options.headers );
 		}
 
+		if ( path?.startsWith( '/' ) ) {
+			path = path.substring( 1 );
+		}
+
 		return this.fetchManager.queue( this.getURL( path, params ), requestOptions );
 	}
 

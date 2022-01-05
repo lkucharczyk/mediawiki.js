@@ -1,11 +1,14 @@
-import { ApiQueryListAllusersCriteria, ApiQueryUser } from '../../types/types';
+import { ApiQueryListAllusersCriteria, ApiQueryUser, ApiQueryUserBlockinfo } from '../../types/types';
+import { UnprefixKeys } from '../../types/util';
 import { prefixKeys } from '../util/util';
 import { Loaded, UncompleteModel } from "./UncompleteModel";
 import { UncompleteModelSet } from './UncompleteModelSet';
 import { Wiki } from "./Wiki";
 import { WikiNetwork } from "./WikiNetwork";
 
-interface WikiUserComponents{
+interface WikiUserComponents {
+	blockinfo?: UnprefixKeys<UnprefixKeys<ApiQueryUserBlockinfo, 'blocked'>, 'block'>|null,
+	exists?: boolean,
 	id? : number;
 	name? : string;
 	groups? : string[];
@@ -89,7 +92,7 @@ class WikiUserSet<T extends WikiUser = WikiUser> extends UncompleteModelSet<T> {
 };
 
 const WikiUserLoader = {
-	components: [ 'id', 'name', 'groups' ],
+	components: [ 'blockinfo', 'exists', 'id', 'name', 'groups' ],
 	async load( set : WikiUser|WikiUserSet ) {
 		const models = set instanceof WikiUser ? [ set ] : set.models;
 
@@ -104,13 +107,13 @@ const WikiUserLoader = {
 			}
 		}
 
-		const users : ApiQueryUser<'groups'>[] = [];
+		const users : ApiQueryUser<'blockinfo'|'groups'>[] = [];
 		const promises = [];
 
 		const params = {
 			action: 'query',
 			list: 'users',
-			usprop: 'groups'
+			usprop: [ 'blockinfo', 'groups' ]
 		} as const;
 
 		if ( ids.length ) {
@@ -131,13 +134,34 @@ const WikiUserLoader = {
 
 		await Promise.all( promises );
 
-		for ( const user of users ) {
-			for ( const model of models ) {
+		for ( const model of models ) {
+			model.exists = false;
+
+			for ( const user of users ) {
 				if ( model.id === user.userid || model.name === user.name ) {
-					model.id = user.userid;
-					model.name = user.name;
-					model.groups = user.groups;
+					model.exists = !user.missing;
+
+					if ( model.exists ) {
+						model.id = user.userid;
+						model.name = user.name;
+						model.groups = user.groups;
+						model.blockinfo = user.blockedby
+							? {
+								by: user.blockedby,
+								byid: user.blockedbyid,
+								expiry: user.blockexpiry,
+								id: user.blockid,
+								reason: user.blockreason,
+								timestamp: user.blockedtimestamp
+							}
+							: null;
+					}
+					break;
 				}
+			}
+
+			if ( !model.exists ) {
+				model.setLoaded( WikiUser.COMPONENTS as ( keyof WikiUserComponents )[] );
 			}
 		}
 

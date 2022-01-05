@@ -104,7 +104,11 @@ WikiPage.registerLoader( {
 			if ( model.exists ) {
 				model.id = page.pageid;
 				model.title = page.title;
-			};
+			}
+		}
+
+		if ( !model.exists ) {
+			model.setLoaded( WikiPage.COMPONENTS as ( keyof WikiPageComponents )[] );
 		}
 	}
 } );

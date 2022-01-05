@@ -1,19 +1,30 @@
+import { AnyPick, PrefixKeys } from '../util';
 import { ApiQueryRequest } from './ApiRequest';
 import { ApiQueryResponse } from './ApiResponse';
 
-export type ApiQueryListUsersProps = 'editcount'|'gender'|'groups'|'implicitgroups'|'registration'|'rights';
+export type ApiQueryListUsersProps = 'blockinfo'|'editcount'|'gender'|'groups'|'implicitgroups'|'registration'|'rights';
+
+export interface ApiQueryUserBlockinfo {
+	blockedby: string,
+	blockedbyid: number,
+	blockedtimestamp: string,
+	blockexpiry: string,
+	blockid: number,
+	blockreason: string
+}
 
 export type ApiQueryUser<P extends ApiQueryListUsersProps = never> = {
 	name : string;
 	userid : number;
-} & Pick<{
+	missing?: false;
+} & AnyPick<{
 	editcount : number;
 	gender : string;
 	groups : string[];
 	implicitgroups : string[];
 	registration : string;
 	rights : string[];
-}, P>;
+}, P> & ( Extract<P, 'blockinfo'> extends never ? {} : Partial<Record<keyof ApiQueryUserBlockinfo, never>>|ApiQueryUserBlockinfo );
 
 interface ApiQueryListUsersRequestBase extends ApiQueryRequest {
 	list : 'users';

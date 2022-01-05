@@ -77,10 +77,7 @@ class FandomWiki extends Wiki {
 	}
 
 	public getUsers( names : (string|number)[] ) : FandomUserSet {
-		return new FandomUserSet( names.map( e => this.getUser( {
-			id:1,
-
-		} ).fromJSON( {} ) ) );
+		return new FandomUserSet( names.map( e => this.getUser( e ) ) );
 	}
 
 	public clear() : void {

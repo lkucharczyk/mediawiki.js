@@ -19,5 +19,6 @@ export type OnlyOneGroup<T extends Record<string, Record<string, any>>> = {
 }[keyof T];
 
 export type PrefixKeys<O, P extends string> = { [ K in keyof O as K extends string ? `${ P }${ K }` : K ] : O[K] };
+export type UnprefixKeys<O, P extends string> = { [ K in keyof O as K extends `${ P }${ infer R }` ? R : K ] : O[K] };
 
 export type UnionToIntersection<U> = ( U extends any ? ( k : U ) => void : never ) extends ( ( k : infer I ) => void ) ? I : never;

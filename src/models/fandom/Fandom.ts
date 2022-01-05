@@ -1,4 +1,3 @@
-import { FandomUser, FandomUserSet } from './FandomUser';
 import { FandomWiki } from './FandomWiki';
 import { FetchManager, FetchManagerOptions } from '../../util/FetchManager';
 import { RequestInit } from 'node-fetch';
@@ -6,8 +5,8 @@ import { WikiNetwork, WikiNotOnNetworkError } from '../WikiNetwork';
 import { Loaded } from '../UncompleteModel';
 
 interface Fandom extends WikiNetwork {
-	getUser( name : string|number ) : FandomUser;
-	getUsers( name : (string|number)[] ) : FandomUserSet;
+	getUser: FandomWiki['getUser'];
+	getUsers: FandomWiki['getUsers'];
 };
 
 class Fandom extends WikiNetwork {
@@ -15,11 +14,13 @@ class Fandom extends WikiNetwork {
 	public static readonly REGEXP_LANG = /^[a-z]{2,3}(?:-[a-z]{2,})?$/
 	public static readonly REGEXP_WIKI = /^(?:([a-z]{2,3}(?:-[a-z]{2,})?)\.)?([a-z0-9-_]+)$/
 
-	public readonly central : FandomWiki;
+	public readonly central: FandomWiki;
+	protected readonly services: FandomWiki
 
 	public constructor( fetchManager? : FetchManager|FetchManagerOptions, requestOptions? : RequestInit ) {
 		super( 'Fandom', fetchManager, requestOptions );
 		this.central = this.getWiki( 'community' );
+		this.services = this.getWiki( 'services' );
 
 		this.getUser = this.central.getUser.bind( this.central );
 		this.getUsers = this.central.getUsers.bind( this.central );
@@ -48,6 +49,10 @@ class Fandom extends WikiNetwork {
 		}
 
 		throw new WikiNotOnFandomError();
+	}
+
+	public async callServices( path: string, params?: Record<string, string>, options? : RequestInit ) {
+		return this.services.call( path, params, options ).then( r => r.json() );
 	}
 
 	public getWiki( wiki : string ) : FandomWiki {

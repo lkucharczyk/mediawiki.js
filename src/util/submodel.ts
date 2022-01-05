@@ -5,7 +5,7 @@ export type GetSubmodel<
 	S extends UncompleteModel & { id?: number },
 	C extends Partial<S>,
 	K extends keyof S & keyof C & string
-> = <T extends number|string|( Omit<C, 'id'> & { id: number } )>( id: Readonly<T> ) =>
+> = <T extends number|string|Readonly<( Omit<C, 'id'> & { id: number } )>>( id: T ) =>
 	Loaded<S, ( T extends number ? 'id' : T extends string ? K : ( keyof T & keyof S ) )>;
 
 export type FetchSubmodels<
