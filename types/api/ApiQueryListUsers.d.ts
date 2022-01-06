@@ -1,4 +1,4 @@
-import { AnyPick, PrefixKeys } from '../util';
+import { AnyPick, OnlyOneOf } from '../util';
 import { ApiQueryRequest } from './ApiRequest';
 import { ApiQueryResponse } from './ApiResponse';
 
@@ -13,10 +13,25 @@ export interface ApiQueryUserBlockinfo {
 	blockreason: string
 }
 
+export type ApiQueryUserMissing = {
+	missing: true,
+	invalid?: false
+} & OnlyOneOf<{
+	name: string,
+	userid: number
+}>;
+
+export interface ApiQueryUserInvalid {
+	name: string,
+	missing?: false,
+	invalid: true
+}
+
 export type ApiQueryUser<P extends ApiQueryListUsersProps = never> = {
-	name : string;
-	userid : number;
-	missing?: false;
+	name: string,
+	userid: number,
+	missing?: false,
+	invalid?: false
 } & AnyPick<{
 	editcount : number;
 	gender : string;
@@ -25,6 +40,11 @@ export type ApiQueryUser<P extends ApiQueryListUsersProps = never> = {
 	registration : string;
 	rights : string[];
 }, P> & ( Extract<P, 'blockinfo'> extends never ? {} : Partial<Record<keyof ApiQueryUserBlockinfo, never>>|ApiQueryUserBlockinfo );
+
+export type ApiQueryMaybeUser<P extends ApiQueryListUsersProps = never, I extends boolean = true> =
+	I extends true
+		? ApiQueryUserMissing|ApiQueryUserInvalid|ApiQueryUser<P>
+		: ApiQueryUserMissing|ApiQueryUser<P>;
 
 interface ApiQueryListUsersRequestBase extends ApiQueryRequest {
 	list : 'users';
@@ -43,13 +63,13 @@ interface ApiQueryListUsersByName extends ApiQueryListUsersRequestBase {
 
 export type ApiQueryListUsersRequest = ApiQueryListUsersByIds|ApiQueryListUsersByName;
 
-export interface ApiQueryListUsersResponse<P extends ApiQueryListUsersProps = never> extends ApiQueryResponse {
+export interface ApiQueryListUsersResponse<P extends ApiQueryListUsersProps = never, I extends boolean = true> extends ApiQueryResponse {
 	query : {
-		users : ApiQueryUser<P>[];
+		users: ApiQueryMaybeUser<P, I>[]
 	};
 }
 
 export type ApiQueryListUsersRequestResponse<T extends ApiQueryListUsersRequest> =
-	T['usprop'] extends ApiQueryListUsersProps ? ApiQueryListUsersResponse<T['usprop']> :
-	T['usprop'] extends readonly ApiQueryListUsersProps[] ? ApiQueryListUsersResponse<T['usprop'][number]>
+	T['usprop'] extends ApiQueryListUsersProps ? ApiQueryListUsersResponse<T['usprop'], T extends ApiQueryListUsersByName ? true : false> :
+	T['usprop'] extends readonly ApiQueryListUsersProps[] ? ApiQueryListUsersResponse<T['usprop'][number], T extends ApiQueryListUsersByName ? true : false>
 		: ApiQueryListUsersResponse;

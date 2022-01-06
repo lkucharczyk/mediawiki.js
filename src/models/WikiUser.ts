@@ -1,4 +1,4 @@
-import { ApiQueryListAllusersCriteria, ApiQueryUser, ApiQueryUserBlockinfo } from '../../types/types';
+import { ApiQueryListAllusersCriteria, ApiQueryMaybeUser, ApiQueryUserBlockinfo } from '../../types/types';
 import { UnprefixKeys } from '../../types/util';
 import { prefixKeys } from '../util/util';
 import { Loaded, UncompleteModel } from "./UncompleteModel";
@@ -34,6 +34,7 @@ class WikiUser extends UncompleteModel {
 			this.setLoaded( 'id' );
 		} else {
 			this.name = name.replace( /_/g, ' ' ).trim();
+			this.name = ( this.name[0] ?? '' ).toUpperCase() + this.name.substring( 1 );
 			this.setLoaded( 'name' );
 		}
 	}
@@ -107,7 +108,7 @@ const WikiUserLoader = {
 			}
 		}
 
-		const users : ApiQueryUser<'blockinfo'|'groups'>[] = [];
+		const users: ApiQueryMaybeUser<'blockinfo'|'groups'>[] = [];
 		const promises = [];
 
 		const params = {
@@ -138,10 +139,9 @@ const WikiUserLoader = {
 			model.exists = false;
 
 			for ( const user of users ) {
-				if ( model.id === user.userid || model.name === user.name ) {
-					model.exists = !user.missing;
-
-					if ( model.exists ) {
+				if ( ( !user.invalid && user.userid !== undefined && model.id === user.userid ) || ( user.name && model.name === user.name ) ) {
+					if ( !user.missing && !user.invalid ) {
+						model.exists = true;
 						model.id = user.userid;
 						model.name = user.name;
 						model.groups = user.groups;
@@ -156,6 +156,7 @@ const WikiUserLoader = {
 							}
 							: null;
 					}
+
 					break;
 				}
 			}
