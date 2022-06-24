@@ -30,7 +30,7 @@ export class FetchManager implements FetchManagerOptionsRequired {
 	public static readonly VERBOSE_DEBUG = 2;
 
 	public static defaults : FetchManagerOptionsRequired = {
-		fetch: fetch,
+		fetch,
 		maxRequests: 1,
 		waitTime: 0,
 		verbose: FetchManager.VERBOSE_NONE

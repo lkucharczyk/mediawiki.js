@@ -1,3 +1,4 @@
+import { NirvanaDiscussionForumGetForumsRequest, NirvanaDiscussionForumGetForumsResponse } from './DiscussionForum/GetForums';
 import { NirvanaDiscussionThreadGetThreadsRequest, NirvanaDiscussionThreadGetThreadsResponse } from './DiscussionThreadController/GetThreads';
 import { NirvanaMercuryApiGetWikiVariablesRequest, NirvanaMercuryApiGetWikiVariablesResponse } from './MercuryApiController/GetWikiVariables';
 import { NirvanaUserApiGetDetailsRequest, NirvanaUserApiGetDetailsResponse } from './UsersApiController/GetDetails';
@@ -13,6 +14,7 @@ export interface NirvanaRequestBase {
 
 // Object to allow external augementation
 export interface KnownNirvanaRequestsObj {
+	DiscussionForum_getForum    : NirvanaDiscussionForumGetForumsRequest,
 	DiscussionThread_getThreads : NirvanaDiscussionThreadGetThreadsRequest,
 	MercuryApi_getWikiVariables : NirvanaMercuryApiGetWikiVariablesRequest,
 	UserApi_getDetails          : NirvanaUserApiGetDetailsRequest,
@@ -25,6 +27,7 @@ export type KnownNirvanaRequests = KnownNirvanaRequestsObj[keyof KnownNirvanaReq
 
 // Object to allow external augementation
 export interface KnownNirvanaResponsesObj<T extends NirvanaRequestBase> {
+	DiscussionForum_getForum    : T extends NirvanaDiscussionForumGetForumsRequest ? NirvanaDiscussionForumGetForumsResponse : never,
 	DiscussionThread_getThreads : T extends NirvanaDiscussionThreadGetThreadsRequest ? NirvanaDiscussionThreadGetThreadsResponse : never,
 	MercuryApi_getWikiVariables : T extends NirvanaMercuryApiGetWikiVariablesRequest ? NirvanaMercuryApiGetWikiVariablesResponse : never,
 	UserApi_getDetails          : T extends NirvanaUserApiGetDetailsRequest ? NirvanaUserApiGetDetailsResponse : never,

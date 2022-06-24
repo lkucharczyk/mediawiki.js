@@ -3,6 +3,7 @@ export * from './models/fandom/Fandom';
 export * from './models/fandom/FandomFamily';
 export * from './models/fandom/FandomUser';
 export * from './models/fandom/FandomWiki';
+export * from './models/fandom/NirvanaError';
 export * from './models/WikiApiError';
 export * from './models/Wiki';
 export * from './models/WikiFamily';
