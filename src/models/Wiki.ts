@@ -11,7 +11,7 @@ import {
 } from '../../types/types';
 import { FetchManager, FetchManagerOptions } from '../util/FetchManager';
 import { FetchError, Headers, RequestInit, Response } from 'node-fetch';
-import { Loaded, UncompleteModel } from './UncompleteModel';
+import { Loaded, UncompleteModel, UncompleteModelLoaderT } from './UncompleteModel';
 import { UncompleteModelSet } from './UncompleteModelSet';
 import { WikiFamily } from './WikiFamily';
 import { WikiNetwork } from './WikiNetwork';
@@ -39,6 +39,7 @@ interface WikiComponents {
 interface Wiki extends WikiComponents {
 	callApi<P extends KnownApiRequests>( params : Readonly<P>, options? : RequestInit ) : Promise<ApiRequestResponse<P>>;
 	load<T extends keyof WikiComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
+	load<T extends keyof WikiComponents>( loader: UncompleteModelLoaderT<Wiki, T> ): Promise<Loaded<this, T>>;
 	setLoaded( components : keyof WikiComponents|( keyof WikiComponents )[] ) : void;
 
 	getPage: GetSubmodel<WikiPage, WikiPageComponents, 'title'>;

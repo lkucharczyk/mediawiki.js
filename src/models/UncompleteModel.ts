@@ -3,9 +3,21 @@ import { UncompleteModelSet } from './UncompleteModelSet';
 export type Loaded<T, U extends keyof T> = T & Required<Pick<T, U>>;
 
 export interface UncompleteModelLoader<T extends UncompleteModel = UncompleteModel> {
-	components : string[];
-	dependencies? : string[];
-	load : ( ( model : T, components : string[] ) => Promise<string[]|void> ) | ( ( model : T|UncompleteModelSet<T>, components : string[] ) => Promise<string[]|void> );
+	components: string[];
+	dependencies?: string[];
+	load: ( ( model: T, components: string[] ) => Promise<string[]|void> )
+		| ( ( model: T|UncompleteModelSet<T>, components: string[] ) => Promise<string[]|void> );
+};
+
+export interface UncompleteModelLoaderT<
+	T extends UncompleteModel = UncompleteModel,
+	C extends Extract<keyof T, string> = Extract<keyof T, string>,
+	D extends Extract<keyof T, string>|never = Extract<keyof T, string>|never
+> {
+	components: C[];
+	dependencies?: D[];
+	load: ( ( model: Loaded<T, D>, components: Extract<keyof T, string>[] ) => Promise<Extract<keyof T, string>[]|void> )
+		| ( ( model: Loaded<T, D>|UncompleteModelSet<T>, components: Extract<keyof T, string>[] ) => Promise<Extract<keyof T, string>[]|void> );
 };
 
 export abstract class UncompleteModel {
@@ -15,10 +27,21 @@ export abstract class UncompleteModel {
 	#loading : Record<string, Promise<string[]|void>> = {};
 	#loaded : string[] = [];
 
-	public async load( ...components : string[] ) : Promise<this> {
+	public async load( ...components : [ UncompleteModelLoaderT<this> ]|string[] ) : Promise<this> {
 		const constructor = this.constructor as typeof UncompleteModel;
 		const promises = [];
 		const toload : string[] = [];
+
+		if ( ( ( c ): c is [ UncompleteModelLoaderT<this> ] => ( c.length === 1 && typeof c[0] === 'object' ) )( components ) ) {
+			const loader = components[0];
+
+			const promise = loader.dependencies
+				? this.load( ...loader.dependencies ).then( m => loader.load( m as any, [ ...loader.components ] ) )
+				: loader.load( this as any, [ ...loader.components ] );
+
+			this.addLoading( [ ...loader.components ], promise );
+			return promise.then( () => this );
+		}
 
 		if ( !components.length ) {
 			components = constructor.COMPONENTS;
@@ -39,17 +62,17 @@ export abstract class UncompleteModel {
 
 		if ( toload.length ) {
 			for ( const loader of constructor.LOADERS ) {
-				if ( components.find( e => loader.components.includes( e ) ) ) {
-					const match = components.filter( e => loader.components.includes( e ) );
-					let promise : Promise<any>;
+				const match: string[] = components.filter( e => loader.components.includes( e ) );
+				if ( match.length > 0 ) {
+					let promise: Promise<string[]|void>;
 					if ( loader.dependencies ) {
 						promise = this.load( ...loader.dependencies ).then( () => loader.load( this, match ) );
 					} else {
-						promise = loader.load( this, components );
+						promise = loader.load( this, match );
 					}
 
 					promises.push( promise );
-					this.addLoading( components, promise );
+					this.addLoading( match, promise );
 					components = components.filter( e => !match.includes( e ) );
 				}
 			}
@@ -120,7 +143,7 @@ export abstract class UncompleteModel {
 		}
 	}
 
-	public static registerLoader<T extends UncompleteModel>( ...loaders : UncompleteModelLoader<T>[] ) : void {
+	public static registerLoader<T extends UncompleteModel>( ...loaders: ( UncompleteModelLoader<T>|UncompleteModelLoaderT<T> )[] ) : void {
 		if ( !this.hasOwnProperty( 'COMPONENTS' ) ) {
 			this.COMPONENTS = [];
 		}

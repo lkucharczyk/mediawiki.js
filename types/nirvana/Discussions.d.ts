@@ -1,11 +1,12 @@
 export interface DiscussionDate {
 	epochSecond: number,
+	/** @deprecated */
 	nano: 0
 }
 
 export interface DiscussionUser {
 	id: string,
-	avatarUrl: string,
+	avatarUrl: string|null,
 	name: string,
 	badgePermission: string
 }
