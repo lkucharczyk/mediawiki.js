@@ -1,7 +1,7 @@
 import { Fandom } from './Fandom';
 import { FandomUser, FandomUserComponents, FandomUserSet } from './FandomUser';
-import { chunkArray, FetchManager, FetchManagerOptions } from '../../util/util';
-import { RequestInit } from 'node-fetch';
+import { chunkArray, FetchManager, FetchManagerOptions, isIterable } from '../../util/util';
+import { Headers, RequestInit } from 'node-fetch';
 import { UncompleteModelSet } from '../UncompleteModelSet';
 import { Wiki, WikiComponents } from '../Wiki';
 import { FandomFamily } from './FandomFamily';
@@ -50,8 +50,34 @@ class FandomWiki extends Wiki {
 	}
 
 	public async callNirvanaUnknown<T extends NirvanaResponse = NirvanaResponse>( params: NirvanaRequestBase, options?: RequestInit ): Promise<T> {
+		for ( const key in params ) {
+			if ( typeof params[key] === 'object' && params[key]?.toString() === '[object Object]' ) {
+				params[key] = JSON.stringify( params[key] );
+			}
+		}
+
+		if ( options?.method === 'POST' && options?.body === undefined ) {
+			options ??= {};
+			options.body = new URLSearchParams();
+			for ( const key in params ) {
+				if ( key !== 'controller' && key !== 'method' ) {
+					options.body.append( key, params[key]?.toString() ?? '' );
+					delete params[key];
+				}
+			}
+
+			options.headers ??= {};
+			if ( options.headers instanceof Headers ) {
+				options.headers.set( 'Content-Type', 'application/x-www-form-urlencoded' );
+			} else if ( Array.isArray( options.headers ) ) {
+				options.headers.push( [ 'Content-Type', 'application/x-www-form-urlencoded' ] );
+			} else if ( !isIterable( options.headers ) ) {
+				options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+			}
+		}
+
 		params.format = 'json';
-		return this.call( 'wikia.php', this.processApiParams( params, ',' ), options )
+		return this.call( 'wikia.php', this.processApiParams( params as unknown as Record<string, Exclude<NirvanaRequestBase[string], Record<string, unknown>>>, ',' ), options )
 			.then( async r => r.json() as Promise<T|NirvanaErrorResponse> )
 			.then( r => {
 				if ( 'error' in r && r.error !== undefined ) {

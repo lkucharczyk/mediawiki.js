@@ -1,7 +1,7 @@
 export interface DiscussionDate {
 	epochSecond: number,
 	/** @deprecated */
-	nano: 0
+	nano: number
 }
 
 export interface DiscussionUser {
@@ -17,16 +17,27 @@ export interface DiscussionPagination {
 	next?: [ { href: string } ]
 }
 
+export interface DiscussionJsonModel {
+	type: 'doc',
+	content: {
+		type: 'paragraph',
+		content: {
+			type: 'text',
+			text: string
+		}[]
+	}[]
+}
+
 export interface DiscussionPermalink {
 	permalink: [ { href: string } ]
 }
 
 export interface DiscussionAttachments {
 	atMentions: DiscussionUser[],
-	// contentImages: [],
-	// openGraphs: [],
-	// polls: [],
-	// quizzes: []
+	contentImages: unknown[],
+	openGraphs: unknown[],
+	polls: unknown[],
+	quizzes: unknown[]
 }
 
 export interface DiscussionTag {

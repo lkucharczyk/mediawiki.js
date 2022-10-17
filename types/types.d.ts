@@ -21,6 +21,7 @@ export * from './api/ApiRequest';
 export * from './api/ApiResponse';
 export * from './nirvana/DiscussionThreadController/GetThreads';
 export * from './nirvana/MercuryApiController/GetWikiVariables';
+export * from './nirvana/MessageWall/CreateThread';
 export * from './nirvana/UsersApiController/GetDetails';
 export * from './nirvana/WikisApiController/GetDetails';
 export * from './nirvana/WikisApiController/GetWikisUnderDomain';

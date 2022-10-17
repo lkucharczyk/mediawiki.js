@@ -3,7 +3,6 @@ import { NirvanaDiscussionPostGetPostsRequest, NirvanaDiscussionPostGetPostsResp
 import { NirvanaDiscussionThreadGetThreadsRequest, NirvanaDiscussionThreadGetThreadsResponse } from './DiscussionThreadController/GetThreads';
 import { NirvanaMercuryApiGetWikiVariablesRequest, NirvanaMercuryApiGetWikiVariablesResponse } from './MercuryApiController/GetWikiVariables';
 import { NirvanaMessageWall } from './MessageWall/CreateThread';
-import { NirvanaResponse } from './NirvanaResponse';
 import { NirvanaUserApiGetDetailsRequest, NirvanaUserApiGetDetailsResponse } from './UsersApiController/GetDetails';
 import { NirvanaUserApiGetUsersByNameRequest, NirvanaUserApiGetUsersByNameResponse } from './UsersApiController/GetUsersByName';
 import { NirvanaWikisApiGetDetailsRequest, NirvanaWikisApiGetDetailsRequestResponse } from './WikisApiController/GetDetails';
@@ -12,7 +11,7 @@ import { NirvanaWikisApiGetWikisUnderDomainRequest, NirvanaWikisApiGetWikisUnder
 export interface NirvanaRequestBase {
 	controller: string,
 	method: string,
-	[ key : string ]: string|number|readonly ( string|number )[]|undefined
+	[ key : string ]: string|number|readonly ( string|number )[]|Record<string, unknown>|undefined
 }
 
 // Object to allow external augementation
@@ -36,7 +35,7 @@ export interface KnownNirvanaResponsesObj<T extends NirvanaRequestBase> {
 	DiscussionPost_getPosts     : T extends NirvanaDiscussionPostGetPostsRequest ? NirvanaDiscussionPostGetPostsResponse : never,
 	DiscussionThread_getThreads : T extends NirvanaDiscussionThreadGetThreadsRequest ? NirvanaDiscussionThreadGetThreadsResponse : never,
 	MercuryApi_getWikiVariables : T extends NirvanaMercuryApiGetWikiVariablesRequest ? NirvanaMercuryApiGetWikiVariablesResponse : never,
-	MessageWall_createThread    : T extends NirvanaMessageWall.CreateThread.Request ? NirvanaResponse : never,
+	MessageWall_createThread    : T extends NirvanaMessageWall.CreateThread.Request ? NirvanaMessageWall.CreateThread.Response : never,
 	UserApi_getDetails          : T extends NirvanaUserApiGetDetailsRequest ? NirvanaUserApiGetDetailsResponse : never,
 	UserApi_getUsersByName      : T extends NirvanaUserApiGetUsersByNameRequest ? NirvanaUserApiGetUsersByNameResponse : never,
 	WikisApi_getDetails         : T extends NirvanaWikisApiGetDetailsRequest ? NirvanaWikisApiGetDetailsRequestResponse<T> : never,
