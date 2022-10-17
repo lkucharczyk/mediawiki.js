@@ -1,4 +1,4 @@
-import { DiscussionDate, DiscussionForum, DiscussionPagination, DiscussionUser } from '../Discussions';
+import { DiscussionDate, DiscussionForum, DiscussionPagination, DiscussionTag, DiscussionUser } from '../Discussions';
 import { NirvanaRequestBase } from '../NirvanaRequest';
 import { NirvanaResponse } from '../NirvanaResponse';
 
@@ -22,6 +22,7 @@ export interface NirvanaDiscussionThreadGetThreadsResponse extends NirvanaRespon
 			id: string,
 			lastEditedBy: DiscussionUser,
 			rawContent: string,
+			tags: DiscussionTag[],
 			title: string,
 			trendingScore: number,
 			upvoteCount: number

@@ -1,10 +1,10 @@
-import { ApiQueryListAllusersCriteria, ApiQueryMaybeUser, ApiQueryUserBlockinfo } from '../../types/types';
+import { ApiQueryListAllusers, ApiQueryMaybeUser, ApiQueryUserBlockinfo } from '../../types/types';
 import { UnprefixKeys } from '../../types/util';
 import { prefixKeys } from '../util/util';
-import { Loaded, UncompleteModel } from "./UncompleteModel";
+import { Loaded, UncompleteModel } from './UncompleteModel';
 import { UncompleteModelSet } from './UncompleteModelSet';
-import { Wiki } from "./Wiki";
-import { WikiNetwork } from "./WikiNetwork";
+import { Wiki } from './Wiki';
+import { WikiNetwork } from './WikiNetwork';
 
 interface WikiUserComponents {
 	blockinfo?: UnprefixKeys<UnprefixKeys<ApiQueryUserBlockinfo, 'blocked'>, 'block'>|null,
@@ -56,26 +56,36 @@ class WikiUser extends UncompleteModel {
 		}
 	}
 
-	public static async fetch<W extends Wiki, U extends WikiUser>( wiki: W, criteria: ApiQueryListAllusersCriteria = {} ) : Promise<Loaded<U, 'id'|'name'>[]> {
-		const users : Loaded<U, 'id'|'name'>[] = [];
-		let aufrom : string|undefined;
+	public static async fetch<W extends Wiki, U extends WikiUser, C extends 'groups'|never = never>(
+		wiki: W,
+		criteria: ApiQueryListAllusers.Criteria = {},
+		components?: C[]
+	): Promise<Loaded<U, 'id'|'name'|C>[]> {
+		const users: Loaded<U, 'id'|'name'|C>[] = [];
+		let aufrom: string|undefined;
 
 		criteria ??= {};
 		criteria.limit ??= 'max';
+
+		const incGroups = components?.find( c => c === 'groups' );
 
 		do {
 			const res = await wiki.callApi( {
 				action: 'query',
 				list: 'allusers',
 				aufrom,
-				...prefixKeys( criteria, 'au' )
+				...prefixKeys( criteria, 'au' ),
+				auprop: incGroups ? [ 'groups' ] : []
 			} );
 
 			for ( const u of res.query.allusers ) {
-				users.push( wiki.getUser( {
-					id: u.userid,
-					name: u.name
-				} ) as Loaded<U, 'id'|'name'>);
+				users.push(
+					wiki.getUser( {
+						id: u.userid,
+						name: u.name,
+						...( incGroups ? { groups: u.groups } : {} )
+					} ) as Loaded<U, 'id'|'name'|C>
+				);
 			}
 
 			aufrom = res.continue?.aufrom;

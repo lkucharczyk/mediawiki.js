@@ -57,9 +57,10 @@ export class WikiFamily {
 		const queue = [ this.base ];
 
 		while ( queue.length ) {
-			let source = queue.shift() as Loaded<Wiki, 'interwikimap'|'lang'>;
+			const source = queue.shift() as Loaded<Wiki, 'interwikimap'|'lang'>;
 
-			await source.load( 'interwikimap', 'lang' ).catch( () => { throw new Error( `Family base wiki ${ source.entrypoint } doesn't exist.` ) } );
+			await source.load( 'interwikimap', 'lang' )
+				.catch( () => { throw new Error( `Family base wiki ${ source.entrypoint } doesn't exist.` ); } );
 			this.wikis[source.lang] = source;
 
 			for ( const interwiki of source.interwikimap ) {

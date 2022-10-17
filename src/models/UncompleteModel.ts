@@ -27,7 +27,7 @@ export abstract class UncompleteModel {
 	#loading : Record<string, Promise<string[]|void>> = {};
 	#loaded : string[] = [];
 
-	public async load( ...components : [ UncompleteModelLoaderT<this> ]|string[] ) : Promise<this> {
+	public async load( ...components: [ UncompleteModelLoaderT<this> ]|string[] ): Promise<this> {
 		const constructor = this.constructor as typeof UncompleteModel;
 		const promises = [];
 		const toload : string[] = [];
@@ -36,7 +36,7 @@ export abstract class UncompleteModel {
 			const loader = components[0];
 
 			const promise = loader.dependencies
-				? this.load( ...loader.dependencies ).then( m => loader.load( m as any, [ ...loader.components ] ) )
+				? this.load( ...loader.dependencies ).then( async m => loader.load( m as any, [ ...loader.components ] ) )
 				: loader.load( this as any, [ ...loader.components ] );
 
 			this.addLoading( [ ...loader.components ], promise );
@@ -56,7 +56,7 @@ export abstract class UncompleteModel {
 			} else if ( constructor.COMPONENTS.includes( component ) ) {
 				toload.push( component );
 			} else {
-				throw new Error( `"${component}" isn't a loadable component in ${constructor.name}.` );
+				throw new Error( `"${ component }" isn't a loadable component in ${ constructor.name }.` );
 			}
 		}
 
@@ -66,7 +66,7 @@ export abstract class UncompleteModel {
 				if ( match.length > 0 ) {
 					let promise: Promise<string[]|void>;
 					if ( loader.dependencies ) {
-						promise = this.load( ...loader.dependencies ).then( () => loader.load( this, match ) );
+						promise = this.load( ...loader.dependencies ).then( async () => loader.load( this, match ) );
 					} else {
 						promise = loader.load( this, match );
 					}
@@ -88,13 +88,13 @@ export abstract class UncompleteModel {
 			components = [ components ];
 		}
 
-		promise.then( ( c ) => this.setLoaded( c ? c : components ) ).catch( e => false );
+		promise.then( ( c ) => this.setLoaded( c ? c : components ) ).catch( () => false );
 
 		for ( const component of components ) {
 			if ( constructor.COMPONENTS.includes( component ) ) {
 				this.#loading[component] = promise;
 			} else {
-				throw new Error( `"${component}" isn't a loadable component in ${constructor.name}.` );
+				throw new Error( `"${ component }" isn't a loadable component in ${ constructor.name }.` );
 			}
 		}
 	}
@@ -138,7 +138,7 @@ export abstract class UncompleteModel {
 			if ( constructor.COMPONENTS.includes( component ) ) {
 				this.#loaded.push( component );
 			} else {
-				throw new Error( `"${component}" isn't a loadable component in ${constructor.name}.` );
+				throw new Error( `"${ component }" isn't a loadable component in ${ constructor.name }.` );
 			}
 		}
 	}
@@ -160,7 +160,7 @@ export abstract class UncompleteModel {
 		this.#loaded = [];
 	}
 
-	public fromJSON( data : Partial<this> ) : this {
+	public fromJSON( data: Partial<this> ): this {
 		for ( const prop in data ) {
 			if (
 				data.hasOwnProperty( prop )
@@ -168,16 +168,16 @@ export abstract class UncompleteModel {
 				&& typeof data[prop as keyof typeof data] !== 'function'
 				&& ( this.constructor as typeof UncompleteModel ).COMPONENTS.includes( prop )
 			) {
-				this[prop as keyof this] = data[prop as keyof typeof data] as any;
+				this[prop as keyof this] = data[prop as keyof typeof data] as unknown as this[keyof this];
 				this.setLoaded( prop );
 			}
 		}
 
-		return this;
+		return this;// as Loaded<this, Extract<keyof C, keyof this>>;
 	}
 
-	public toJSON() : any {
-		const out : any = {};
+	public toJSON(): Record<string, any> {
+		const out: Record<string, any> = {};
 
 		for ( const prop in this ) {
 			if (

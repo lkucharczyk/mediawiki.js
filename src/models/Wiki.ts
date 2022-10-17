@@ -1,10 +1,7 @@
 import {
 	ApiErrorResponse,
-	ApiQueryMetaSiteinfoPropGeneral,
-	ApiQueryMetaSiteinfoPropInterwikimap,
-	ApiQueryMetaSiteinfoPropNamespaces,
-	ApiQueryMetaSiteinfoProps,
-	ApiQueryMetaSiteinfoPropStatistics,
+	ApiQueryListAllusers,
+	ApiQueryMetaSiteinfo,
 	ApiRequestBase,
 	ApiRequestResponse,
 	KnownApiRequests,
@@ -23,29 +20,30 @@ import { WikiPage, WikiPageComponents } from './WikiPage';
 import FormData from 'form-data';
 
 interface WikiComponents {
-	articlepath? : string;
-	generator? : string;
-	interwikimap? : ApiQueryMetaSiteinfoPropInterwikimap;
-	lang? : string;
-	name? : string;
-	namespaces?: ApiQueryMetaSiteinfoPropNamespaces;
-	server? : string;
-	scriptpath? : string;
-	siteinfo? : ApiQueryMetaSiteinfoPropGeneral;
-	statistics? : ApiQueryMetaSiteinfoPropStatistics;
-	url? : string;
+	articlepath?: string,
+	generator?: string,
+	interwikimap?: ApiQueryMetaSiteinfo.PropInterwikimap,
+	lang?: string,
+	name?: string,
+	namespaces?: ApiQueryMetaSiteinfo.PropNamespaces,
+	server?: string,
+	scriptpath?: string,
+	siteinfo?: ApiQueryMetaSiteinfo.PropGeneral,
+	statistics?: ApiQueryMetaSiteinfo.PropStatistics,
+	url: string
 };
 
 interface Wiki extends WikiComponents {
-	callApi<P extends KnownApiRequests>( params : Readonly<P>, options? : RequestInit ) : Promise<ApiRequestResponse<P>>;
-	load<T extends keyof WikiComponents>( ...components : T[] ) : Promise<Loaded<this, T>>;
+	callApi<P extends KnownApiRequests>( params: Readonly<P>, options?: RequestInit ) : Promise<ApiRequestResponse<P>>;
+	load<T extends keyof WikiComponents>( ...components: T[] ) : Promise<Loaded<this, T>>;
 	load<T extends keyof WikiComponents>( loader: UncompleteModelLoaderT<Wiki, T> ): Promise<Loaded<this, T>>;
 	setLoaded( components : keyof WikiComponents|( keyof WikiComponents )[] ) : void;
 
 	getPage: GetSubmodel<WikiPage, WikiPageComponents, 'title'>;
 	getUser: GetSubmodel<WikiUser, WikiUserComponents, 'name'>;
 	fetchPages: FetchSubmodels<( typeof WikiPage )['fetch']>;
-	fetchUsers: FetchSubmodels<( typeof WikiUser )['fetch']>;
+	// fetchUsers: FetchSubmodels<( typeof WikiUser )['fetch']>;
+	fetchUsers<C extends 'groups'|never = never>( criteria?: ApiQueryListAllusers.Criteria, components?: C[] ): Promise<Loaded<WikiUser, 'id'|'name'|C>[]>;
 };
 
 @submodel<typeof Wiki, typeof WikiPage, WikiPageComponents>( WikiPage, 'page' )
@@ -55,8 +53,6 @@ class Wiki extends UncompleteModel {
 	public family? : WikiFamily;
 	public network? : WikiNetwork;
 	public requestOptions : RequestInit;
-
-	public url: string;
 
 	protected readonly fetchManager : FetchManager;
 
@@ -147,7 +143,7 @@ class Wiki extends UncompleteModel {
 				callParams = {};
 			} else if ( options.body instanceof FormData ) {
 				for ( const key in params ) {
-					options.body.append( key, params[key] )
+					options.body.append( key, params[key] );
 				}
 			}
 
@@ -155,8 +151,8 @@ class Wiki extends UncompleteModel {
 		}
 
 		return this.call( 'api.php', callParams, options )
-			.then( r => r.json().catch( e =>{
-				throw e instanceof FetchError ? Object.assign( e, { response: r } ) : e
+			.then( async r => r.json().catch( e =>{
+				throw e instanceof FetchError ? Object.assign( e, { response: r } ) : e;
 			} ) as Promise<R|ApiErrorResponse> )
 			.then( r => {
 				if ( 'error' in r ) {
@@ -190,7 +186,7 @@ class Wiki extends UncompleteModel {
 			? this.server + this.scriptpath
 			: this.url;
 
-		return encodeURI( `${ base }/${ path }` ) + ( params ? `?${( new URLSearchParams( params ) ).toString()}` : '' );
+		return encodeURI( `${ base }/${ path }` ) + ( params ? `?${ ( new URLSearchParams( params ) ).toString() }` : '' );
 	}
 
 	getWikiURL( path = '', params? : Record<string, string> ) : string {
@@ -198,7 +194,7 @@ class Wiki extends UncompleteModel {
 			? this.server + this.articlepath
 			: `${ this.url }/$1`;
 
-		return base.replace( '$1', encodeURIComponent( path.replace( / /g, '_' ) ) ) + ( params ? `?${( new URLSearchParams( params ) ).toString()}` : '' );
+		return base.replace( '$1', encodeURIComponent( path.replace( / /g, '_' ) ) ) + ( params ? `?${ ( new URLSearchParams( params ) ).toString() }` : '' );
 	}
 
 	public getFamily( strict : boolean = true ) : WikiFamily {
@@ -209,7 +205,7 @@ class Wiki extends UncompleteModel {
 		return this.family;
 	}
 
-	public getUsers( names : (string|number)[] ) : WikiUserSet {
+	public getUsers( names : ( string|number )[] ) : WikiUserSet {
 		return new WikiUserSet( names.map( e => this.getUser( e ) ) );
 	}
 }
@@ -228,7 +224,7 @@ Wiki.registerLoader( {
 	async load( set : Wiki|UncompleteModelSet<Wiki>, components : string[] ) {
 		const models : Wiki[] = set instanceof Wiki ? [ set ] : set.models;
 
-		const load : ApiQueryMetaSiteinfoProps[] = [ 'general' ];
+		const load : ApiQueryMetaSiteinfo.Props[] = [ 'general' ];
 
 		if ( components.includes( 'interwikimap' ) ) {
 			load.push( 'interwikimap' );
@@ -242,14 +238,14 @@ Wiki.registerLoader( {
 			load.push( 'statistics' );
 		}
 
-		await Promise.all( models.map( model =>
+		await Promise.all( models.map( async model =>
 			model.callApi( {
 				action: 'query',
 				meta: 'siteinfo',
 				siprop: load
 			} ).then( si => {
 				if ( 'general' in si.query ) {
-					function genDescriptor<T extends object>( obj : T, key : keyof T ) : PropertyDescriptor {
+					const genDescriptor = <T extends object>( obj: T, key: keyof T ): PropertyDescriptor => {
 						return {
 							configurable: true,
 							enumerable: true,

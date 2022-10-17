@@ -14,7 +14,7 @@ export interface ApiQueryMetaUserinfoResponse<P extends ApiQueryMetaUserinfoProp
 			id : number;
 			name : string;
 			anon : boolean;
-		} & ( Extract<P, 'rights'> extends never ? {} : { rights: string[] });
+		} & ( Extract<P, 'rights'> extends never ? {} : { rights: string[] } );
 	};
 }
 

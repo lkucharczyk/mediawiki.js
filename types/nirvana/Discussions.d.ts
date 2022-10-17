@@ -17,6 +17,25 @@ export interface DiscussionPagination {
 	next?: [ { href: string } ]
 }
 
+export interface DiscussionPermalink {
+	permalink: [ { href: string } ]
+}
+
+export interface DiscussionAttachments {
+	atMentions: DiscussionUser[],
+	// contentImages: [],
+	// openGraphs: [],
+	// polls: [],
+	// quizzes: []
+}
+
+export interface DiscussionTag {
+	siteId: string,
+	articleId: string,
+	articleTitle: string,
+	relativeUrl: string
+}
+
 export interface DiscussionForum {
 	allowThreads: boolean,
 	creationDate: DiscussionDate,

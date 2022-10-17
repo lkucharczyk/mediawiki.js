@@ -10,12 +10,12 @@ interface Fandom extends WikiNetwork {
 };
 
 class Fandom extends WikiNetwork {
-	public static readonly REGEXP_DOMAIN = /\.(?:fandom\.com|gamepedia\.com|\wikia\.(?:com|org))$/
-	public static readonly REGEXP_LANG = /^[a-z]{2,3}(?:-[a-z]{2,})?$/
-	public static readonly REGEXP_WIKI = /^(?:([a-z]{2,3}(?:-[a-z]{2,})?)\.)?([a-z0-9-_]+)$/
+	public static readonly REGEXP_DOMAIN = /\.(?:fandom\.com|gamepedia\.com|\wikia\.(?:com|org))$/;
+	public static readonly REGEXP_LANG = /^[a-z]{2,3}(?:-[a-z]{2,})?$/;
+	public static readonly REGEXP_WIKI = /^(?:([a-z]{2,3}(?:-[a-z]{2,})?)\.)?([a-z0-9-_]+)$/;
 
 	public readonly central: FandomWiki;
-	protected readonly services: FandomWiki
+	protected readonly services: FandomWiki;
 
 	public constructor( fetchManager? : FetchManager|FetchManagerOptions, requestOptions? : RequestInit ) {
 		super( 'Fandom', fetchManager, requestOptions );
@@ -29,7 +29,7 @@ class Fandom extends WikiNetwork {
 	public static normalizeURL( wiki : string ) : string {
 		let url;
 		try {
-			url = new URL( !wiki.startsWith( 'http://' ) && !wiki.startsWith( 'https://' ) ? `https://${wiki}` : wiki );
+			url = new URL( !wiki.startsWith( 'http://' ) && !wiki.startsWith( 'https://' ) ? `https://${ wiki }` : wiki );
 		} catch {}
 
 		if ( url && Fandom.REGEXP_DOMAIN.test( url.hostname ) ) {
@@ -37,7 +37,7 @@ class Fandom extends WikiNetwork {
 
 			const path = url.pathname.split( '/' );
 			if ( path.length > 1 && Fandom.REGEXP_LANG.test( path[1] ) ) {
-				entrypoint += `/${path[1]}`;
+				entrypoint += `/${ path[1] }`;
 			}
 
 			return entrypoint;
@@ -45,14 +45,14 @@ class Fandom extends WikiNetwork {
 
 		const match = wiki.match( Fandom.REGEXP_WIKI );
 		if ( match ) {
-			return `https://${match[2]}.fandom.com${match[1] ? `/${match[1]}` : ''}`;
+			return `https://${ match[2] }.fandom.com${ match[1] ? `/${ match[1] }` : '' }`;
 		}
 
 		throw new WikiNotOnFandomError();
 	}
 
 	public async callServices( path: string, params?: Record<string, string>, options? : RequestInit ) {
-		return this.services.call( path, params, options ).then( r => r.json() );
+		return this.services.call( path, params, options ).then( async r => r.json() );
 	}
 
 	public getWiki( wiki : string ) : FandomWiki {

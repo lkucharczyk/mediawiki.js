@@ -4,7 +4,7 @@ import { WikiUser, WikiUserComponents, WikiUserSet } from '../WikiUser';
 import { chunkArray } from '../../util/util';
 import { Wiki } from '../Wiki';
 import type { Loaded } from '../UncompleteModel';
-import type { ApiQueryListAllusersCriteria } from '../../../types/types';
+import type { ApiQueryListAllusers } from '../../../types/types';
 
 type FandomUserAttribute = 'bio'|'discordHandle'|'fbPage'|'name'|'twitter'|'website';
 interface FandomUserComponents extends WikiUserComponents {
@@ -24,10 +24,10 @@ class FandomUser extends WikiUser {
 		super( wiki, name );
 	}
 
-	public static fetch( wiki: Wiki, criteria?: ApiQueryListAllusersCriteria ): never;
-	public static fetch( wiki: FandomWiki, criteria?: ApiQueryListAllusersCriteria ): Promise<Loaded<FandomUser, 'id'|'name'>[]>;
-	public static async fetch( wiki: FandomWiki, criteria: ApiQueryListAllusersCriteria = {} ) {
-		return WikiUser.fetch<FandomWiki, FandomUser>( wiki, criteria );
+	public static fetch<C extends 'groups'|never = never>( wiki: Wiki, criteria?: ApiQueryListAllusers.Criteria, components?: C[] ): never;
+	public static fetch<C extends 'groups'|never = never>( wiki: FandomWiki, criteria?: ApiQueryListAllusers.Criteria, components?: C[] ): Promise<Loaded<FandomUser, 'id'|'name'|C>[]>;
+	public static async fetch<C extends 'groups'|never = never>( wiki: FandomWiki, criteria?: ApiQueryListAllusers.Criteria, components?: C[] ) {
+		return await WikiUser.fetch<FandomWiki, FandomUser, C>( wiki, criteria, components );
 	}
 };
 
@@ -45,7 +45,7 @@ const FandomUserLoader = {
 		const models = set instanceof FandomUser ? [ set ] : set.models;
 		const chunks = chunkArray( models.map( e => e.id as number ), 100 );
 
-		return Promise.all( chunks.map( ids =>
+		return Promise.all( chunks.map( async ids =>
 			models[0].wiki.callNirvana( {
 				controller: 'UserApi',
 				method: 'getDetails',
@@ -85,7 +85,7 @@ FandomUser.registerLoader( {
 		};
 
 		const match: FandomUserAttribute[] = [ 'bio', 'discordHandle', 'fbPage', 'name', 'twitter', 'website' ];
-		const check = match.includes.bind( match ) as ( v: any ) => v is FandomUserAttribute;
+		const check = match.includes.bind( match ) as ( v: unknown ) => v is FandomUserAttribute;
 
 		for ( const { name, value } of res._embedded.properties ) {
 			if ( !value ) {

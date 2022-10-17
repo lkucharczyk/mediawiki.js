@@ -48,7 +48,7 @@ export class FetchManager implements FetchManagerOptionsRequired {
 	#active : number = 0;
 	#queue : QueuedRequest[] = [];
 
-	public constructor( options : FetchManagerOptions = FetchManager.defaults ) {
+	public constructor( options: FetchManagerOptions = FetchManager.defaults ) {
 		this.#id = FetchManager.instances++;
 		this.name = options.name ?? FetchManager.defaults.name;
 		this.fetch = options.fetch ?? FetchManager.defaults.fetch;
@@ -57,7 +57,7 @@ export class FetchManager implements FetchManagerOptionsRequired {
 		this.verbose = options.verbose ?? FetchManager.defaults.verbose;
 	}
 
-	public queue( url : string, options? : RequestInit ) : Promise<Response> {
+	public async queue( url: string, options?: RequestInit ): Promise<Response> {
 		return new Promise( ( resolve, reject ) => {
 			this.#queue.push( {
 				url,
@@ -76,29 +76,29 @@ export class FetchManager implements FetchManagerOptionsRequired {
 		}
 
 		this.#active++;
-		this.log( FetchManager.VERBOSE_DEBUG, `Starting fetch loop (${this.#active}/${this.maxRequests} active)` );
+		this.log( FetchManager.VERBOSE_DEBUG, `Starting fetch loop (${ this.#active }/${ this.maxRequests } active)` );
 
 		let request;
 		while ( request = this.#queue.pop() ) {
 			this.log( FetchManager.VERBOSE_DEBUG, 'Requested', request.url );
 			await this.fetch( request.url, request.options ).then( request.resolve, request.reject );
-			this.log( FetchManager.VERBOSE_INFO, 'Received', request.url );
+			this.log( FetchManager.VERBOSE_DEBUG, 'Received', request.url );
 			await this.wait();
 		}
 
 		this.#active--;
-		this.log( FetchManager.VERBOSE_DEBUG, `Ending fetch loop (${this.#active}/${this.maxRequests} active)` );
+		this.log( FetchManager.VERBOSE_DEBUG, `Ending fetch loop (${ this.#active }/${ this.maxRequests } active)` );
 	}
 
-	private wait() : Promise<void> {
+	private async wait() : Promise<void> {
 		return this.waitTime > 0
 			? new Promise( ( resolve ) => { setTimeout( resolve, this.waitTime ); } )
 			: Promise.resolve();
 	}
 
-	private log( level : number, ...args : any[] ) {
+	private log( level: number, ...args: unknown[] ) {
 		if ( this.verbose >= level ) {
-			console.log( `[FetchManager#${this.#id}${this.name ? `:${this.name}` : ''}]`, ...args );
+			console.log( `[FetchManager#${ this.#id }${ this.name ? `:${ this.name }` : '' }]`, ...args );
 		}
 	}
 };

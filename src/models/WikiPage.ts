@@ -1,14 +1,15 @@
 import { Response } from 'node-fetch';
-import { ApiQueryListAllpagesCriteria } from '../main';
+import { ApiQueryListAllpages } from '../main';
 import { prefixKeys } from '../util/util';
 import { Loaded, UncompleteModel } from './UncompleteModel';
 import { Wiki } from './Wiki';
 
 interface WikiPageComponents {
-	exists?: boolean;
-	id?: number;
-	ns?: number;
-	title?: string;
+	exists?: boolean,
+	known?: boolean,
+	id?: number,
+	ns?: number,
+	title?: string
 }
 
 interface WikiPage extends WikiPageComponents {
@@ -47,17 +48,20 @@ class WikiPage extends UncompleteModel {
 	public async export( history: boolean = true, templates: boolean = false ): Promise<Response> {
 		await this.load( 'title' );
 
-		return this.wiki.callIndex( Object.assign(
-			{
-				title: 'Special:Export',
-				pages: this.title!
-			},
-			( history ? {} : { curonly: '1' } ) as ( {} | { curonly: '1' } ),
-			( templates ? { templates: '1' } : {} ) as ( {} | { templates: '1' } )
-		), history ? { method: 'POST' } : {} );
+		return this.wiki.callIndex(
+			Object.assign(
+				{
+					title: 'Special:Export',
+					pages: this.title!
+				},
+				( history ? {} : { curonly: '1' } ) as { curonly?: '1' },
+				( templates ? { templates: '1' } : {} ) as { templates?: '1' }
+			),
+			history ? { method: 'POST' } : {}
+		);
 	}
 
-	public static async fetch( wiki: Wiki, criteria: ApiQueryListAllpagesCriteria = {} ): Promise<Loaded<WikiPage, 'exists'|'id'|'ns'|'title'>[]> {
+	public static async fetch( wiki: Wiki, criteria: ApiQueryListAllpages.Criteria = {} ): Promise<Loaded<WikiPage, 'exists'|'id'|'ns'|'title'>[]> {
 		const pages : Loaded<WikiPage, 'exists'|'id'|'ns'|'title'>[] = [];
 		let apcontinue : string|undefined;
 
@@ -89,7 +93,7 @@ class WikiPage extends UncompleteModel {
 }
 
 WikiPage.registerLoader( {
-	components: [ 'exists', 'id', 'ns', 'title' ],
+	components: [ 'exists', 'known', 'id', 'ns', 'title' ],
 	async load( model: Loaded<WikiPage, 'id'>|Loaded<WikiPage, 'title'> ) {
 		const res = await ( model.isLoaded( 'id' )
 			? model.wiki.callApi( { action: 'query', pageids: model.id! } )
@@ -101,9 +105,12 @@ WikiPage.registerLoader( {
 		if ( page ) {
 			model.ns = page.ns;
 
-			if ( model.exists ) {
+			if ( !page.missing ) {
 				model.id = page.pageid;
 				model.title = page.title;
+				model.known = true;
+			} else {
+				model.known = page.known ?? false;
 			}
 		}
 

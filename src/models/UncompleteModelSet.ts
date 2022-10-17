@@ -35,7 +35,7 @@ class UncompleteModelSet<T extends UncompleteModel> {
 
 					let promise : Promise<any>;
 					if ( loader.dependencies ) {
-						promise = this.load( ...loader.dependencies ).then( () => loader.load( this, components ) );
+						promise = this.load( ...loader.dependencies ).then( async () => loader.load( this, components ) );
 					} else {
 						promise = loader.load( this, components );
 					}
@@ -78,6 +78,10 @@ class UncompleteModelSet<T extends UncompleteModel> {
 		}
 
 		this.LOADERS.push( ...loaders );
+	}
+
+	public toJSON() {
+		return this.models.map( m => m.toJSON() );
 	}
 };
 

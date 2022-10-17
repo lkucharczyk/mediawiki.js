@@ -7,7 +7,8 @@ import { Wiki, WikiComponents } from '../Wiki';
 import { FandomFamily } from './FandomFamily';
 import { Loaded, UncompleteModelLoaderT } from '../UncompleteModel';
 import {
-	ApiQueryMetaSiteinfoPropGeneral,
+	ApiQueryListAllusers,
+	ApiQueryMetaSiteinfo,
 	KnownNirvanaRequests,
 	KnownNirvanaResponses,
 	NirvanaErrorResponse,
@@ -15,32 +16,31 @@ import {
 	NirvanaResponse
 } from '../../../types/types';
 import { NirvanaError } from './NirvanaError';
-import { FetchSubmodels, GetSubmodel, submodel } from '../../util/submodel';
+import { GetSubmodel, submodel } from '../../util/submodel';
 
 interface FandomWikiComponents extends WikiComponents {
-	id?: number;
-	vertical?: string;
-};
+	id?: number,
+	vertical?: string
+}
 
 type FandomWikiLoader<C extends keyof FandomWikiComponents, D extends keyof FandomWikiComponents|never = never> = UncompleteModelLoaderT<FandomWiki, C, D>;
 
 interface FandomWiki extends FandomWikiComponents {
-	siteinfo?: ApiQueryMetaSiteinfoPropGeneral & { gamepedia?: 'true'|'false' };
+	siteinfo?: ApiQueryMetaSiteinfo.PropGeneral & { gamepedia?: 'true'|'false' };
 	callNirvana<P extends KnownNirvanaRequests>( params: Readonly<P>, options?: RequestInit ): Promise<KnownNirvanaResponses<P>>;
 	load<T extends keyof FandomWikiComponents>( ...components: T[] ): Promise<Loaded<this, T>>;
 	load<T extends keyof FandomWikiComponents, D extends keyof FandomWikiComponents>( loader: FandomWikiLoader<T, D> ): Promise<Loaded<this, T|D>>;
 	setLoaded( components: keyof FandomWikiComponents|( keyof FandomWikiComponents )[] ): void;
 
 	getUser: GetSubmodel<FandomUser, FandomUserComponents, 'name'>;
-	fetchUsers: FetchSubmodels<( typeof FandomUser )['fetch']>;
+	// fetchUsers: FetchSubmodels<( typeof FandomUser )['fetch']>;
+	fetchUsers<C extends 'groups'|never = never>( criteria?: ApiQueryListAllusers.Criteria, components?: C[] ): Promise<Loaded<FandomUser, 'id'|'name'|C>[]>;
 };
 
 @submodel<typeof FandomWiki, typeof FandomUser, FandomUserComponents>( FandomUser, 'User' )
 class FandomWiki extends Wiki {
 	public readonly network: Fandom;
-	public family?: FandomFamily;
-
-	public url!: string;
+	declare public family?: FandomFamily;
 
 	constructor( network: Fandom, entrypoint: string, fetchManager?: FetchManager|FetchManagerOptions, requestOptions?: RequestInit ) {
 		super( entrypoint, fetchManager, requestOptions );
@@ -52,7 +52,7 @@ class FandomWiki extends Wiki {
 	public async callNirvanaUnknown<T extends NirvanaResponse = NirvanaResponse>( params: NirvanaRequestBase, options?: RequestInit ): Promise<T> {
 		params.format = 'json';
 		return this.call( 'wikia.php', this.processApiParams( params, ',' ), options )
-			.then( r => r.json() as Promise<T|NirvanaErrorResponse> )
+			.then( async r => r.json() as Promise<T|NirvanaErrorResponse> )
 			.then( r => {
 				if ( 'error' in r && r.error !== undefined ) {
 					throw new NirvanaError( r );
@@ -81,7 +81,7 @@ class FandomWiki extends Wiki {
 		return this.family;
 	}
 
-	public getUsers( names: (string|number)[] ): FandomUserSet {
+	public getUsers( names: ( string|number )[] ): FandomUserSet {
 		return new FandomUserSet( names.map( e => this.getUser( e ) ) );
 	}
 
@@ -131,7 +131,7 @@ export const FandomWikiWDLoader: UncompleteModelLoaderT<FandomWiki, 'lang'|'name
 		const models = set instanceof FandomWiki ? [ set ] : set.models;
 		const chunks = chunkArray( models.map( e => e.id ).filter( e => e !== undefined ) as number[], 250 );
 
-		return Promise.all( chunks.map( ids =>
+		return Promise.all( chunks.map( async ids =>
 			models[0].callNirvana( {
 				controller: 'WikisApi',
 				method: 'getDetails',

@@ -48,7 +48,7 @@ export class MappedArrays<T> {
 	}
 };
 
-export function isIterable( obj : { [Symbol.iterator]? : unknown } ) : obj is Iterable<any> {
+export function isIterable( obj: { [Symbol.iterator]?: unknown } ): obj is Iterable<unknown> {
 	return typeof obj[Symbol.iterator] === 'function';
 };
 
