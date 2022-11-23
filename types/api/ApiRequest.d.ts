@@ -74,4 +74,4 @@ export type ApiRequestResponse<T extends ApiRequestBase> =
 		? T extends ApiQueryRequest
 			? ApiQueryResponse
 			: ApiResponse
-		: UnionToIntersection<KnownApiResponsesObj<T>[keyof KnownApiResponsesObj<T>]>;
+		: ( KnownApiResponsesObj<T>[keyof KnownApiResponsesObj<T>] extends any ? ( k: KnownApiResponsesObj<T>[keyof KnownApiResponsesObj<T>] ) => void : never ) extends ( ( k: infer I extends ApiResponse ) => void ) ? I : never;

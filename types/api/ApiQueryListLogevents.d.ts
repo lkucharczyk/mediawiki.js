@@ -7,7 +7,7 @@ export type ApiQueryListLogeventsProps = 'comment'|'details'|'ids'|'parsedcommen
 export interface ApiQueryListLogeventsRequest extends ApiQueryRequest {
 	list: 'logevents';
 	leaction?: string|readonly string[];
-	lecontinue?: string;
+	lecontinue?: string|undefined,
 	ledir?: 'newer'|'older';
 	leend?: Date|string;
 	lelimit?: number|'max';

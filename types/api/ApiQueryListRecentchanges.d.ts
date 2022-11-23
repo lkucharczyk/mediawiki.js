@@ -10,7 +10,7 @@ export type ApiQueryListRecentChangesType = 'categorize'|'edit'|'external'|'log'
 
 export interface ApiQueryListRecentChangesRequest extends ApiQueryRequest {
 	list : 'recentchanges';
-	rccontinue? : string;
+	rccontinue?: string|undefined,
 	rcdir? : 'newer'|'older';
 	rcend? : string|Date;
 	rcexcludeuser? : string;

@@ -4,6 +4,7 @@ import {
 	ApiQueryMetaSiteinfo,
 	ApiRequestBase,
 	ApiRequestResponse,
+	ApiResponse,
 	KnownApiRequests,
 } from '../../types/types';
 import { FetchManager, FetchManagerOptions } from '../util/FetchManager';
@@ -118,7 +119,7 @@ class Wiki extends UncompleteModel {
 		return out;
 	}
 
-	public async callApiUnknown<P extends ApiRequestBase = ApiRequestBase, R = ApiRequestResponse<P>>( params : Readonly<P>, options? : RequestInit ) : Promise<R> {
+	public async callApiUnknown<P extends ApiRequestBase = ApiRequestBase, R extends ApiResponse = ApiRequestResponse<P>>( params: Readonly<P>, options?: RequestInit ) : Promise<R> {
 		Object.assign( params, {
 			format: 'json',
 			formatversion: 2
@@ -151,11 +152,16 @@ class Wiki extends UncompleteModel {
 		}
 
 		return this.call( 'api.php', callParams, options )
-			.then( async r => r.json().catch( e =>{
-				throw e instanceof FetchError ? Object.assign( e, { response: r } ) : e;
-			} ) as Promise<R|ApiErrorResponse> )
+			.then( async r =>
+				( r.json() as Promise<R|ApiErrorResponse> )
+					.catch( e => {
+						throw e instanceof FetchError
+							? Object.assign( e, { response: r } )
+							: e;
+					} )
+			)
 			.then( r => {
-				if ( 'error' in r ) {
+				if ( ( ( r ): r is ApiErrorResponse => 'error' in r )( r ) ) {
 					throw new WikiApiError( r );
 				}
 

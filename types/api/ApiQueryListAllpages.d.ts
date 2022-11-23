@@ -23,7 +23,7 @@ export namespace ApiQueryListAllpages {
 
 	export interface Request extends ApiQueryRequest, PrefixKeys<Criteria, 'ap'> {
 		list: 'allpages',
-		apcontinue?: string
+		apcontinue?: string|undefined
 	}
 
 	export interface Response extends ApiQueryResponse {

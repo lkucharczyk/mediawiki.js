@@ -1,19 +1,19 @@
 export type ApiQueryPropRevisionsProps = 'comment'|'content'|'contentmodel'|'flags'|'ids'|'parsedcomment'|'roles'|'size'|'sha1'|'slotsha1'|'slotsize'|'tags'|'timestamp'|'user'|'userid';
 
 export interface ApiQueryPropRevisionsParams {
-	rvcontinue? : string;
-	rvprop? : ApiQueryPropRevisionsProps|readonly ApiQueryPropRevisionsProps[];
-	rvslots? : string|readonly string[];
+	rvcontinue?: string|undefined,
+	rvprop?: ApiQueryPropRevisionsProps|readonly ApiQueryPropRevisionsProps[],
+	rvslots?: string|readonly string[]
 }
 
 export type ApiQueryPropRevisionsSlot<P extends ApiQueryPropRevisionsProps> =
 	( Extract<P, 'content'> extends never ? {} : {
-		content : string;
-		contentformat : string;
+		content: string,
+		contentformat: string
 	} )
-	& ( Extract<P, 'content'|'contentmodel'> extends never ? {} : { contentmodel : string } )
-	& ( Extract<P, 'slotsha1'> extends never ? {} : { sha1 : string } )
-	& ( Extract<P, 'slotsize'> extends never ? {} : { size : number } );
+	& ( Extract<P, 'content'|'contentmodel'> extends never ? {} : { contentmodel: string } )
+	& ( Extract<P, 'slotsha1'> extends never ? {} : { sha1: string } )
+	& ( Extract<P, 'slotsize'> extends never ? {} : { size: number } );
 
 export interface ApiQueryPropRevisionsSlots<P extends ApiQueryPropRevisionsProps> {
 	main : ApiQueryPropRevisionsSlot<P>;

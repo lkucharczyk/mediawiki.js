@@ -65,7 +65,7 @@ export class FetchManager implements FetchManagerOptionsRequired {
 				resolve,
 				reject
 			} );
-			this.log( FetchManager.VERBOSE_INFO, 'Queued', url );
+			this.log( FetchManager.VERBOSE_INFO, 'Queued', options?.method ?? 'GET', url );
 			this.process();
 		} );
 	}
