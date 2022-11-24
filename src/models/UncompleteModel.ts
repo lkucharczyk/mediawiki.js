@@ -30,16 +30,21 @@ export abstract class UncompleteModel {
 	public async load( ...components: [ UncompleteModelLoaderT<this> ]|string[] ): Promise<this> {
 		const constructor = this.constructor as typeof UncompleteModel;
 		const promises = [];
-		const toload : string[] = [];
+		const toload: string[] = [];
 
 		if ( ( ( c ): c is [ UncompleteModelLoaderT<this> ] => ( c.length === 1 && typeof c[0] === 'object' ) )( components ) ) {
 			const loader = components[0];
+			const toload2 = loader.components.filter( c => !this.#loaded.includes( c ) );
+
+			if ( toload2.length === 0 ) {
+				return this;
+			}
 
 			const promise = loader.dependencies
-				? this.load( ...loader.dependencies ).then( async m => loader.load( m as any, [ ...loader.components ] ) )
-				: loader.load( this as any, [ ...loader.components ] );
+				? this.load( ...loader.dependencies ).then( async m => loader.load( m as any, toload2 ) )
+				: loader.load( this as any, toload2 );
 
-			this.addLoading( [ ...loader.components ], promise );
+			this.addLoading( toload2, promise );
 			return promise.then( () => this );
 		}
 
