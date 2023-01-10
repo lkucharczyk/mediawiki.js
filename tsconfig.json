@@ -5,7 +5,7 @@
 		"module": "commonjs",
 		"jsx": "preserve",
 		"sourceMap": true,
-		"skipLibCheck": true,
+		"skipDefaultLibCheck": true,
 		"declaration": true,
 		"removeComments": true,
 		"rootDir": "src",

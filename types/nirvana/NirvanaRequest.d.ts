@@ -11,7 +11,7 @@ import { NirvanaWikisApiGetWikisUnderDomainRequest, NirvanaWikisApiGetWikisUnder
 export interface NirvanaRequestBase {
 	controller: string,
 	method: string,
-	[ key : string ]: string|number|readonly ( string|number )[]|Record<string, unknown>|undefined
+	[ key: string ]: string|number|readonly ( string|number )[]|Record<string, any>|undefined
 }
 
 // Object to allow external augementation

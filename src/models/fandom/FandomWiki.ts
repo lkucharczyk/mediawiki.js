@@ -1,6 +1,6 @@
 import { Fandom } from './Fandom';
 import { FandomUser, FandomUserComponents, FandomUserSet } from './FandomUser';
-import { chunkArray, FetchManager, FetchManagerOptions, isIterable } from '../../util/util';
+import { chunkArray, FetchManager, FetchManagerOptions } from '../../util/util';
 import { Headers, RequestInit } from 'node-fetch';
 import { UncompleteModelSet } from '../UncompleteModelSet';
 import { Wiki, WikiComponents } from '../Wiki';
@@ -66,14 +66,10 @@ class FandomWiki extends Wiki {
 				}
 			}
 
-			options.headers ??= {};
-			if ( options.headers instanceof Headers ) {
-				options.headers.set( 'Content-Type', 'application/x-www-form-urlencoded' );
-			} else if ( Array.isArray( options.headers ) ) {
-				options.headers.push( [ 'Content-Type', 'application/x-www-form-urlencoded' ] );
-			} else if ( !isIterable( options.headers ) ) {
-				options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-			}
+			options.headers = options.headers instanceof Headers
+				? options.headers
+				: new Headers( options.headers );
+			options.headers.set( 'Content-Type', 'application/x-www-form-urlencoded' );
 		}
 
 		params.format = 'json';

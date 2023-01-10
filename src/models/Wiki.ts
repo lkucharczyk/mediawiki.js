@@ -15,7 +15,6 @@ import { WikiFamily } from './WikiFamily';
 import { WikiNetwork } from './WikiNetwork';
 import { WikiUser, WikiUserComponents, WikiUserSet } from './WikiUser';
 import { WikiApiError } from './WikiApiError';
-import { isIterable } from '../util/util';
 import { FetchSubmodels, GetSubmodel, submodel } from '../util/submodel';
 import { WikiPage, WikiPageComponents } from './WikiPage';
 import FormData from 'form-data';
@@ -119,36 +118,31 @@ class Wiki extends UncompleteModel {
 		return out;
 	}
 
-	public async callApiUnknown<P extends ApiRequestBase = ApiRequestBase, R extends ApiResponse = ApiRequestResponse<P>>( params: Readonly<P>, options?: RequestInit ) : Promise<R> {
+	public async callApiUnknown<P extends ApiRequestBase = ApiRequestBase, R extends ApiResponse = ApiRequestResponse<P>>( params: Readonly<P>, options?: RequestInit ): Promise<R> {
 		Object.assign( params, {
 			format: 'json',
 			formatversion: 2
 		} );
 
-		let callParams : Record<string, string> = this.processApiParams( params );
-		options = options ?? {};
+		let callParams = this.processApiParams( params );
 
 		if ( options?.method === 'POST' ) {
-			if ( options?.body === undefined ) {
+			if ( options.body === undefined ) {
 				options.body = new URLSearchParams( callParams ).toString();
-				options.headers ??= {};
 
-				if ( options.headers instanceof Headers ) {
-					options.headers.set( 'Content-Type', 'application/x-www-form-urlencoded' );
-				} else if ( Array.isArray( options.headers ) ) {
-					options.headers.push( [ 'Content-Type', 'application/x-www-form-urlencoded' ] );
-				} else if ( !isIterable( options.headers ) ) {
-					options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-				}
+				options.headers = options.headers instanceof Headers
+					? options.headers
+					: new Headers( options.headers );
+				options.headers.set( 'Content-Type', 'application/x-www-form-urlencoded' );
 
 				callParams = {};
 			} else if ( options.body instanceof FormData ) {
 				for ( const key in params ) {
 					options.body.append( key, params[key] );
 				}
-			}
 
-			callParams = {};
+				callParams = {};
+			}
 		}
 
 		return this.call( 'api.php', callParams, options )

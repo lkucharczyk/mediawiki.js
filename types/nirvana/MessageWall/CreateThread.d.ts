@@ -1,4 +1,4 @@
-import { DiscussionDate, DiscussionJsonModel, DiscussionUser } from '../Discussions';
+import { DiscussionAttachments, DiscussionDate, DiscussionJsonModel, DiscussionUser } from '../Discussions';
 import { NirvanaRequestBase } from '../NirvanaRequest';
 import { NirvanaResponse } from '../NirvanaResponse';
 

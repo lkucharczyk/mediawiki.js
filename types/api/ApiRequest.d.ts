@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/type-annotation-spacing */
 import { ApiQueryResponse, ApiResponse } from './ApiResponse';
 import { ApiQueryMetaTokensRequest, ApiQueryMetaTokensRequestResponse } from './ApiQueryMetaTokens';
 import { ApiQueryMetaUserinfoRequest, ApiQueryMetaUserinfoRequestResponse } from './ApiQueryMetaUserinfo';
 import { ApiParseRequest, ApiParseRequestResponse } from './ApiParse';
 import { ApiQueryListUsersRequest, ApiQueryListUsersRequestResponse } from './ApiQueryListUsers';
 import { ApiQueryPageRequest, ApiQueryPageRequestResponse } from './ApiQueryPage';
+import { ApiQueryListUsercontribs } from './ApiQueryListUsercontribs';
 import { ApiQueryListAllusers } from './ApiQueryListAllusers';
 import { ApiQueryListRecentChangesRequest, ApiQueryListRecentChangesRequestResponse } from './ApiQueryListRecentchanges';
 import { ApiQueryListLogeventsRequest, ApiQueryListLogeventsRequestResponse } from './ApiQueryListLogevents';
@@ -14,7 +16,6 @@ import { ApiQueryMetaSiteinfo } from './ApiQueryMetaSiteinfo';
 import { ApiEdit } from './ApiEdit';
 import { ApiImportRequest, ApiImportResponse } from './ApiImport';
 import { ApiUploadRequest } from './ApiUpload';
-import { UnionToIntersection } from '../util';
 
 export interface ApiRequestBase {
 	action: string,
@@ -24,7 +25,7 @@ export interface ApiRequestBase {
 }
 
 export interface ApiQueryRequest extends ApiRequestBase {
-	action: 'query'
+	action: 'query',
 	list?: string|readonly string[],
 	meta?: string|readonly string[],
 	prop?: string|readonly string[]
@@ -40,6 +41,7 @@ interface KnownApiRequestsObj {
 	QueryListLogevents     : ApiQueryListLogeventsRequest,
 	QueryListQuerypage     : ApiQueryListQuerypageRequest,
 	QueryListRecentChanges : ApiQueryListRecentChangesRequest,
+	QueryListUsercontribs  : ApiQueryListUsercontribs.Request,
 	QueryListUsers         : ApiQueryListUsersRequest,
 	QueryMetaAllmessages   : ApiQueryMetaAllmessagesRequest,
 	QueryMetaSiteinfo      : ApiQueryMetaSiteinfo.Request,
@@ -61,6 +63,7 @@ interface KnownApiResponsesObj<T extends ApiRequestBase> {
 	QueryListLogevents     : T extends ApiQueryListLogeventsRequest ? ApiQueryListLogeventsRequestResponse<T> : never,
 	QueryListQuerypage     : T extends ApiQueryListQuerypageRequest ? ApiQueryListQuerypageResponse : never,
 	QueryListRecentChanges : T extends ApiQueryListRecentChangesRequest ? ApiQueryListRecentChangesRequestResponse<T> : never,
+	QueryListUsercontribs  : T extends ApiQueryListUsercontribs.Request ? ApiQueryListUsercontribs.RequestResponse<T> : never,
 	QueryListUsers         : T extends ApiQueryListUsersRequest ? ApiQueryListUsersRequestResponse<T> : never,
 	QueryMetaAllMessages   : T extends ApiQueryMetaAllmessagesRequest ? ApiQueryMetaAllmessagesResponse : never,
 	QueryMetaSiteinfo      : T extends ApiQueryMetaSiteinfo.Request ? ApiQueryMetaSiteinfo.RequestResponse<T> : never,
