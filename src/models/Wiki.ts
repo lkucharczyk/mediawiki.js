@@ -87,10 +87,13 @@ class Wiki extends UncompleteModel {
 		return url;
 	}
 
-	public async call( path? : string, params? : Record<string, string>, options? : RequestInit ) : Promise<Response> {
+	public async call( path?: string, params?: Record<string, string>, options?: RequestInit ): Promise<Response> {
 		const requestOptions = Object.assign( {}, this.requestOptions, options );
 		if ( typeof this.requestOptions?.headers === 'object' && typeof options?.headers === 'object' ) {
-			requestOptions.headers = Object.assign( {}, this.requestOptions.headers, options.headers );
+			requestOptions.headers = new Headers( this.requestOptions.headers );
+			for ( const [ key, val ] of new Headers( options.headers ) ) {
+				requestOptions.headers.set( key, val );
+			}
 		}
 
 		if ( path?.startsWith( '/' ) ) {
