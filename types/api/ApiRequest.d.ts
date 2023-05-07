@@ -16,6 +16,7 @@ import { ApiQueryMetaSiteinfo } from './ApiQueryMetaSiteinfo';
 import { ApiEdit } from './ApiEdit';
 import { ApiImportRequest, ApiImportResponse } from './ApiImport';
 import { ApiUploadRequest } from './ApiUpload';
+import { ApiUserrights } from './ApiUserrights';
 
 export interface ApiRequestBase {
 	action: string,
@@ -48,7 +49,8 @@ interface KnownApiRequestsObj {
 	QueryMetaTokens        : ApiQueryMetaTokensRequest,
 	QueryMetaUserinfo      : ApiQueryMetaUserinfoRequest,
 	QueryPage              : ApiQueryPageRequest,
-	Upload                 : ApiUploadRequest
+	Upload                 : ApiUploadRequest,
+	Userrights             : ApiUserrights.Request
 }
 
 export type KnownApiRequests = KnownApiRequestsObj[keyof KnownApiRequestsObj];
@@ -69,7 +71,8 @@ interface KnownApiResponsesObj<T extends ApiRequestBase> {
 	QueryMetaSiteinfo      : T extends ApiQueryMetaSiteinfo.Request ? ApiQueryMetaSiteinfo.RequestResponse<T> : never,
 	QueryMetaTokens        : T extends ApiQueryMetaTokensRequest ? ApiQueryMetaTokensRequestResponse<T> : never,
 	QueryMetaUserinfo      : T extends ApiQueryMetaUserinfoRequest ? ApiQueryMetaUserinfoRequestResponse<T> : never,
-	QueryPage              : T extends ApiQueryPageRequest ? ApiQueryPageRequestResponse<T> : never
+	QueryPage              : T extends ApiQueryPageRequest ? ApiQueryPageRequestResponse<T> : never,
+	Userrights             : T extends ApiUserrights.Request ? ApiUserrights.Response : never
 }
 
 export type ApiRequestResponse<T extends ApiRequestBase> =

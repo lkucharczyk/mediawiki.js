@@ -1,12 +1,12 @@
-import { FandomWiki } from './FandomWiki';
+import { FandomWiki, FandomWikiComponents } from './FandomWiki';
 import { FetchManager, FetchManagerOptions } from '../../util/FetchManager';
 import { RequestInit } from 'node-fetch';
 import { WikiNetwork, WikiNotOnNetworkError } from '../WikiNetwork';
 import { Loaded } from '../UncompleteModel';
 
 interface Fandom extends WikiNetwork {
-	getUser: FandomWiki['getUser'];
-	getUsers: FandomWiki['getUsers'];
+	getUser: FandomWiki['getUser'],
+	getUsers: FandomWiki['getUsers']
 };
 
 class Fandom extends WikiNetwork {
@@ -17,7 +17,7 @@ class Fandom extends WikiNetwork {
 	public readonly central: FandomWiki;
 	protected readonly services: FandomWiki;
 
-	public constructor( fetchManager? : FetchManager|FetchManagerOptions, requestOptions? : RequestInit ) {
+	public constructor( fetchManager?: FetchManager|FetchManagerOptions, requestOptions?: RequestInit ) {
 		super( 'Fandom', fetchManager, requestOptions );
 		this.central = this.getWiki( 'community' );
 		this.services = this.getWiki( 'services' );
@@ -26,7 +26,7 @@ class Fandom extends WikiNetwork {
 		this.getUsers = this.central.getUsers.bind( this.central );
 	}
 
-	public static normalizeURL( wiki : string ) : string {
+	public static normalizeURL( wiki: string ): string {
 		let url;
 		try {
 			url = new URL( !wiki.startsWith( 'http://' ) && !wiki.startsWith( 'https://' ) ? `https://${ wiki }` : wiki );
@@ -51,19 +51,26 @@ class Fandom extends WikiNetwork {
 		throw new WikiNotOnFandomError();
 	}
 
-	public async callServices( path: string, params?: Record<string, string>, options? : RequestInit ) {
+	public async callServices( path: string, params?: Record<string, string>, options?: RequestInit ) {
 		return this.services.call( path, params, options ).then( async r => r.json() );
 	}
 
-	public getWiki( wiki : string ) : FandomWiki {
-		return new FandomWiki( this, Fandom.normalizeURL( wiki ), this.fetchManager, this.requestOptions );
+	public getWiki( wiki: string ): FandomWiki;
+	public getWiki<const T extends FandomWikiComponents>( wiki: T ): Loaded<FandomWiki, keyof T & keyof FandomWiki>;
+	public getWiki( wiki: string | FandomWikiComponents ): FandomWiki {
+		if ( typeof wiki === 'string' ) {
+			return new FandomWiki( this, Fandom.normalizeURL( wiki ), this.fetchManager, this.requestOptions );
+		} else {
+			wiki.url = Fandom.normalizeURL( wiki.url );
+			return new FandomWiki( this, wiki.url ).fromJSON( wiki );
+		}
 	}
 
-	public async getWikiById( id : number ) : Promise<Loaded<FandomWiki, 'id'>|null> {
+	public async getWikiById( id: number ): Promise<Loaded<FandomWiki, 'id'>|null> {
 		return this.getWikisById( [ id ] ).then( o => o[id] );
 	}
 
-	public async getWikisById<T extends number>( ids : readonly T[] ) : Promise<{ [ id in T ] : Loaded<FandomWiki, 'id'>|null }> {
+	public async getWikisById<T extends number>( ids: readonly T[] ): Promise<{ [ id in T ]: Loaded<FandomWiki, 'id'>|null }> {
 		const items = ( await this.central.callNirvana( {
 			controller: 'WikisApi',
 			method: 'getDetails',
@@ -87,14 +94,14 @@ class Fandom extends WikiNetwork {
 			} else {
 				return [ id, null ];
 			}
-		} ) ) as { [ id in T ] : Loaded<FandomWiki, 'id'>|null };
+		} ) ) as { [ id in T ]: Loaded<FandomWiki, 'id'>|null };
 	}
 };
 
 export { Fandom };
 
 export class WikiNotOnFandomError extends WikiNotOnNetworkError {
-	constructor() {
+	public constructor() {
 		super( 'Fandom' );
 	}
 };

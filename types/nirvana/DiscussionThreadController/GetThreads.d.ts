@@ -7,7 +7,8 @@ export interface NirvanaDiscussionThreadGetThreadsRequest extends NirvanaRequest
 	method: 'getThreads',
 	limit?: number,
 	page?: number,
-	sortKey?: string
+	sortKey?: string,
+	forumId?: string
 }
 
 export interface NirvanaDiscussionThreadGetThreadsResponse extends NirvanaResponse {
