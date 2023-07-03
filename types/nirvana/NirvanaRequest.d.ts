@@ -1,10 +1,10 @@
 import { NirvanaActivityApi } from './ActivityApi/GetSocialActivity';
+import { NirvanaArticleComments } from './ArticleComments';
 import { NirvanaDiscussionForumGetForumsRequest, NirvanaDiscussionForumGetForumsResponse } from './DiscussionForum/GetForums';
 import { NirvanaDiscussionPostGetPostsRequest, NirvanaDiscussionPostGetPostsResponse } from './DiscussionPost/GetPosts';
-import { NirvanaDiscussionThread } from './DiscussionThreadController/GetThread';
-import { NirvanaDiscussionThreadGetThreadsRequest, NirvanaDiscussionThreadGetThreadsResponse } from './DiscussionThreadController/GetThreads';
+import { NirvanaDiscussionThread } from './DiscussionThread';
 import { NirvanaMercuryApiGetWikiVariablesRequest, NirvanaMercuryApiGetWikiVariablesResponse } from './MercuryApiController/GetWikiVariables';
-import { NirvanaMessageWall } from './MessageWall/CreateThread';
+import { NirvanaMessageWall } from './MessageWall';
 import { NirvanaUserApiGetDetailsRequest, NirvanaUserApiGetDetailsResponse } from './UsersApiController/GetDetails';
 import { NirvanaUserApiGetUsersByNameRequest, NirvanaUserApiGetUsersByNameResponse } from './UsersApiController/GetUsersByName';
 import { NirvanaWikisApiGetDetailsRequest, NirvanaWikisApiGetDetailsRequestResponse } from './WikisApiController/GetDetails';
@@ -17,38 +17,61 @@ export interface NirvanaRequestBase {
 }
 
 // Object to allow external augementation
-export interface KnownNirvanaRequestsObj {
-	ActivityApi_getSocialActivity: NirvanaActivityApi.GetSocialActivity.Request,
-	DiscussionForum_getForum:      NirvanaDiscussionForumGetForumsRequest,
-	DiscussionPost_getPosts:       NirvanaDiscussionPostGetPostsRequest,
-	DiscussionThread_getThreads:   NirvanaDiscussionThreadGetThreadsRequest,
-	DiscussionThread_getThread:    NirvanaDiscussionThread.GetThread.Request,
-	MercuryApi_getWikiVariables:   NirvanaMercuryApiGetWikiVariablesRequest,
-	MessageWall_createThread:      NirvanaMessageWall.CreateThread.Request,
-	UserApi_getDetails:            NirvanaUserApiGetDetailsRequest,
-	UserApi_getUsersByName:        NirvanaUserApiGetUsersByNameRequest,
-	WikisApi_getDetails:           NirvanaWikisApiGetDetailsRequest,
-	WikisApi_getWikisUnderDomain:  NirvanaWikisApiGetWikisUnderDomainRequest
+export interface KnownNirvanaRequests {
+	ActivityApi: {
+		getSocialActivity:   NirvanaActivityApi.GetSocialActivity.Request
+	},
+	ArticleComments:         NirvanaArticleComments.Request,
+	DiscussionForum: {
+		getForums:           NirvanaDiscussionForumGetForumsRequest
+	},
+	DiscussionPost: {
+		getPosts:            NirvanaDiscussionPostGetPostsRequest
+	},
+	DiscussionThread:        NirvanaDiscussionThread.Request,
+	MercuryApi: {
+		getWikiVariables:    NirvanaMercuryApiGetWikiVariablesRequest
+	},
+	MessageWall: {
+		createThread:        NirvanaMessageWall.CreateThread.Request,
+		getThreads:          NirvanaMessageWall.GetThreads.Request
+	},
+	UserApi: {
+		getDetails:          NirvanaUserApiGetDetailsRequest,
+		getUsersByName:      NirvanaUserApiGetUsersByNameRequest
+	},
+	WikisApi: {
+		getDetails:          NirvanaWikisApiGetDetailsRequest,
+		getWikisUnderDomain: NirvanaWikisApiGetWikisUnderDomainRequest
+	}
 }
-
-export type KnownNirvanaRequests = KnownNirvanaRequestsObj[keyof KnownNirvanaRequestsObj];
 
 // Object to allow external augementation
-export interface KnownNirvanaResponsesObj<T extends NirvanaRequestBase> {
-	ActivityApi_getSocialActivity: T extends NirvanaActivityApi.GetSocialActivity.Request ? NirvanaActivityApi.GetSocialActivity.Response : never,
-	DiscussionForum_getForum:      T extends NirvanaDiscussionForumGetForumsRequest ? NirvanaDiscussionForumGetForumsResponse : never,
-	DiscussionPost_getPosts:       T extends NirvanaDiscussionPostGetPostsRequest ? NirvanaDiscussionPostGetPostsResponse : never,
-	DiscussionThread_getThreads:   T extends NirvanaDiscussionThreadGetThreadsRequest ? NirvanaDiscussionThreadGetThreadsResponse : never,
-	DiscussionThread_getThread:    T extends NirvanaDiscussionThread.GetThread.Request ? NirvanaDiscussionThread.GetThread.Response : never,
-	MercuryApi_getWikiVariables:   T extends NirvanaMercuryApiGetWikiVariablesRequest ? NirvanaMercuryApiGetWikiVariablesResponse : never,
-	MessageWall_createThread:      T extends NirvanaMessageWall.CreateThread.Request ? NirvanaMessageWall.CreateThread.Response : never,
-	UserApi_getDetails:            T extends NirvanaUserApiGetDetailsRequest ? NirvanaUserApiGetDetailsResponse : never,
-	UserApi_getUsersByName:        T extends NirvanaUserApiGetUsersByNameRequest ? NirvanaUserApiGetUsersByNameResponse : never,
-	WikisApi_getDetails:           T extends NirvanaWikisApiGetDetailsRequest ? NirvanaWikisApiGetDetailsRequestResponse<T> : never,
-	WikisApi_getWikisUnderDomain:  T extends NirvanaWikisApiGetWikisUnderDomainRequest ? NirvanaWikisApiGetWikisUnderDomainResponse : never
+export interface KnownNirvanaResponses<T extends NirvanaRequestBase> {
+	ActivityApi: {
+		getSocialActivity:   NirvanaActivityApi.GetSocialActivity.Response
+	},
+	ArticleComments:         NirvanaArticleComments.Response,
+	DiscussionForum: {
+		getForums:           NirvanaDiscussionForumGetForumsResponse
+	},
+	DiscussionPost: {
+		getPosts:            NirvanaDiscussionPostGetPostsResponse
+	},
+	DiscussionThread:        NirvanaDiscussionThread.Response,
+	MercuryApi: {
+		getWikiVariables:    NirvanaMercuryApiGetWikiVariablesResponse
+	},
+	MessageWall: {
+		createThread:        NirvanaMessageWall.CreateThread.Response,
+		getThreads:          NirvanaMessageWall.GetThreads.Response
+	},
+	UserApi: {
+		getDetails:          NirvanaUserApiGetDetailsResponse,
+		getUsersByName:      NirvanaUserApiGetUsersByNameResponse
+	},
+	WikisApi: {
+		getDetails:          T extends NirvanaWikisApiGetDetailsRequest ? NirvanaWikisApiGetDetailsRequestResponse<T> : never,
+		getWikisUnderDomain: NirvanaWikisApiGetWikisUnderDomainResponse
+	}
 }
-
-export type KnownNirvanaResponses<T extends NirvanaRequestBase> =
-	Exclude<KnownNirvanaResponsesObj<T>[keyof KnownNirvanaResponsesObj<T>], never> extends never
-		? never
-		: KnownNirvanaResponsesObj<T>[keyof KnownNirvanaResponsesObj<T>];

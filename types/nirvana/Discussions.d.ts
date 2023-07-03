@@ -20,8 +20,11 @@ export interface DiscussionPagination {
 export interface DiscussionJsonModel {
 	type: 'doc',
 	content: {
-		type: 'paragraph',
-		content: {
+		type: 'image',
+		attrs: { id: number }
+	} | {
+		type: 'code_block' | 'paragraph',
+		content?: {
 			type: 'text',
 			text: string
 		}[]
@@ -63,4 +66,26 @@ export interface DiscussionForum {
 	recentContributors: DiscussionUser[],
 	siteId: string,
 	threadCount: number
+}
+
+export interface DiscussionPost {
+	createdBy: DiscussionUser,
+	creationDate: DiscussionDate,
+	id: string,
+	isDeleted: boolean,
+	isEditable: boolean,
+	isLocked: boolean,
+	isReported?: boolean,
+	rawContent: string,
+	upvoteCount: number
+}
+
+export interface DiscussionThread extends DiscussionPost {
+	forumId: string,
+	forumName: string,
+	lastDeletedBy?: DiscussionUser,
+	lastEditedBy: DiscussionUser,
+	tags: DiscussionTag[],
+	title: string,
+	trendingScore: number
 }

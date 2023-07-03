@@ -1,4 +1,4 @@
-import { DiscussionAttachments, DiscussionDate, DiscussionPagination, DiscussionPermalink, DiscussionTag, DiscussionUser } from '../Discussions';
+import { DiscussionAttachments, DiscussionDate, DiscussionPagination, DiscussionPermalink, DiscussionPost, DiscussionTag, DiscussionUser } from '../Discussions';
 import { NirvanaRequestBase } from '../NirvanaRequest';
 import { NirvanaResponse } from '../NirvanaResponse';
 
@@ -8,7 +8,9 @@ export interface NirvanaDiscussionPostGetPostsRequest extends NirvanaRequestBase
 	controller: 'DiscussionPost',
 	method: 'getPosts',
 	containerType: ContainerType,
-	limit?: number
+	limit?: number,
+	viewableOnly?: 'true' | 'false',
+	reported?: 'true' | 'false'
 }
 
 export interface NirvanaDiscussionPostGetPostsResponse extends NirvanaResponse {
@@ -26,17 +28,11 @@ export interface NirvanaDiscussionPostGetPostsResponse extends NirvanaResponse {
 			userId: string,
 			wallContainerId: string
 		}[],
-		'doc:posts': {
+		'doc:posts': DiscussionPost & {
 			_links: DiscussionPermalink,
-			createdBy: DiscussionUser,
-			creationDate: DiscussionDate,
 			creatorId: string,
 			forumId: string,
 			forumName: string,
-			id: string,
-			isDeleted: boolean,
-			isEditable: boolean,
-			isLocked: boolean,
 			isReply: boolean,
 			isReported: boolean,
 			jsonModel: string,
@@ -44,13 +40,12 @@ export interface NirvanaDiscussionPostGetPostsResponse extends NirvanaResponse {
 			latestRevisionId: string,
 			modificationDate: DiscussionDate|null,
 			position: number,
-			rawContent: string,
 			// renderedContent: null
 			siteId: string,
 			threadCreatedBy: DiscussionUser,
 			threadId: string,
 			title: null,
-			upvoteCount: 0
+			upvoteCount: 0,
 			_embedded: {
 				// contentImages: [],
 				attachments: DiscussionAttachments,

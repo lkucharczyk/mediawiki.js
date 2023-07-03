@@ -2,7 +2,7 @@ import { NirvanaRequestBase } from '../NirvanaRequest';
 
 export namespace NirvanaActivityApi {
 	export namespace GetSocialActivity {
-		type ActionType = 'create' | 'update' | 'delete';
+		type ActionType = 'create' | 'update' | 'delete' | 'lock' | 'undelete';
 		type ContentType = `${ 'comment' | 'message' | 'post' }${ '' | '-reply' }`;
 
 		export interface Request extends NirvanaRequestBase {

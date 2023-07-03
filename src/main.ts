@@ -1,4 +1,3 @@
-export * from '../types/types';
 export * from './models/fandom/Fandom';
 export * from './models/fandom/FandomFamily';
 export * from './models/fandom/FandomUser';
@@ -11,4 +10,5 @@ export * from './models/WikiNetwork';
 export * from './models/WikiPage';
 export * from './models/WikiUser';
 export * as util from './util/util';
+export type * from '../types/types';
 export type { Loaded } from './models/UncompleteModel';

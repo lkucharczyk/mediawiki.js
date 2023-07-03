@@ -12,18 +12,20 @@ export type FetchSubmodels<
 	F extends ( model: any, criteria?: object ) => Promise<UncompleteModel[]>
 > = F extends ( model: any, criteria?: infer C, ...args: infer A ) => Promise<( infer R )[]> ? ( criteria?: Exclude<C, undefined>, ...args: A ) => Promise<R[]> : never;
 
+interface SubmodelStatic<M, S extends UncompleteModel> {
+	new( model: M, id: number|string ): S,
+	fetch?: ( model: M, criteria: object, ...args: any[] ) => Promise<S[]>
+}
+
 export function submodel<
 	T extends Constructor,
-	S extends {
-		new( model: InstanceType<T>, id: number|string ): UncompleteModel & { id?: number },
-		fetch?: ( model: InstanceType<T>, criteria: object, ...args: any[] ) => Promise<InstanceType<S>[]>
-	},
-	C extends Partial<InstanceType<S>>
->( subconstructor: S, name: string ) {
-	return function( constructor: T ) {
+	S extends UncompleteModel,
+	C extends Partial<S>
+>( subconstructor: SubmodelStatic<InstanceType<T>, S>, name: string ) {
+	return function ( constructor: T ) {
 		const modelName = name[0].toUpperCase() + name.substring( 1 );
 
-		constructor.prototype['get' + modelName] = function( id: number|string|( C & ( { id: number } ) ) ) {
+		constructor.prototype['get' + modelName] = function ( id: number|string|( C & ( { id: number } ) ) ) {
 			if ( typeof id === 'number' || typeof id === 'string' ) {
 				return new subconstructor( this, id );
 			}
@@ -32,7 +34,7 @@ export function submodel<
 		};
 
 		if ( subconstructor.fetch ) {
-			constructor.prototype[`fetch${ modelName }s`] = async function( criteria: object, ...args: any[] ) {
+			constructor.prototype[`fetch${ modelName }s`] = async function ( criteria: object, ...args: unknown[] ) {
 				return await subconstructor.fetch!( this, criteria, ...args );
 			};
 		}

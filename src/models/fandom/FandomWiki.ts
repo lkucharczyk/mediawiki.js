@@ -27,7 +27,11 @@ type FandomWikiLoader<C extends keyof FandomWikiComponents, D extends keyof Fand
 
 interface FandomWiki extends FandomWikiComponents {
 	siteinfo?: ApiQueryMetaSiteinfo.PropGeneral & { gamepedia?: 'true'|'false' },
-	callNirvana<const P extends KnownNirvanaRequests>( params: P, options?: RequestInit ): Promise<KnownNirvanaResponses<P>>,
+	callNirvana<
+		const C extends keyof KnownNirvanaRequests,
+		const M extends ( C extends keyof KnownNirvanaRequests ? keyof KnownNirvanaRequests[C] : keyof KnownNirvanaRequests[keyof KnownNirvanaRequests] ),
+		const P extends NirvanaRequestBase & KnownNirvanaRequests[C][M]
+	>( params: { controller: C, method: M } & P, options?: RequestInit ): Promise<KnownNirvanaResponses<P>[C][M & keyof KnownNirvanaResponses<P>[C]]>,
 	load<T extends keyof FandomWikiComponents>( ...components: T[] ): Promise<Loaded<this, T>>,
 	load<T extends keyof FandomWikiComponents, D extends keyof FandomWikiComponents>( loader: FandomWikiLoader<T, D> ): Promise<Loaded<this, T|D>>,
 	setLoaded( components: keyof FandomWikiComponents|( keyof FandomWikiComponents )[] ): void,
@@ -37,7 +41,7 @@ interface FandomWiki extends FandomWikiComponents {
 	fetchUsers<C extends 'groups'|never = never>( criteria?: ApiQueryListAllusers.Criteria, components?: C[] ): Promise<Loaded<FandomUser, 'id'|'name'|C>[]>
 };
 
-@submodel<typeof FandomWiki, typeof FandomUser, FandomUserComponents>( FandomUser, 'User' )
+@submodel<typeof FandomWiki, FandomUser, FandomUserComponents>( FandomUser, 'User' )
 class FandomWiki extends Wiki {
 	public readonly network: Fandom;
 	declare public family?: FandomFamily;
