@@ -34,10 +34,7 @@ export interface KnownNirvanaRequests {
 	MercuryApi: {
 		getWikiVariables:    NirvanaMercuryApiGetWikiVariablesRequest
 	},
-	MessageWall: {
-		createThread:        NirvanaMessageWall.CreateThread.Request,
-		getThreads:          NirvanaMessageWall.GetThreads.Request
-	},
+	MessageWall:             NirvanaMessageWall.Request,
 	UserApi: {
 		getDetails:          NirvanaUserApiGetDetailsRequest,
 		getUsersByName:      NirvanaUserApiGetUsersByNameRequest
@@ -65,10 +62,7 @@ export interface KnownNirvanaResponses<T extends NirvanaRequestBase> {
 	MercuryApi: {
 		getWikiVariables:    NirvanaMercuryApiGetWikiVariablesResponse
 	},
-	MessageWall: {
-		createThread:        NirvanaMessageWall.CreateThread.Response,
-		getThreads:          NirvanaMessageWall.GetThreads.Response
-	},
+	MessageWall: NirvanaMessageWall.Response,
 	UserApi: {
 		getDetails:          NirvanaUserApiGetDetailsResponse,
 		getUsersByName:      NirvanaUserApiGetUsersByNameResponse
