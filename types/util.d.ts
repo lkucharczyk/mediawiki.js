@@ -24,3 +24,4 @@ export type UnprefixKeys<O, P extends string> = { [ K in keyof O as K extends `$
 export type UnionToIntersection<U> = ( U extends any ? ( k: U ) => void : never ) extends ( ( k: infer I ) => void ) ? I : never;
 
 export type ExtractVal<T extends string, V> = V extends T ? V : V extends T[] ? V[number] : never;
+export type ExtractVal2<T, V> = V extends T ? V : V extends T[] ? V[number] : never;

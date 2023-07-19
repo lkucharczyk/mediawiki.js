@@ -84,7 +84,7 @@ export interface DiscussionThread extends DiscussionPost {
 	forumId: string,
 	forumName: string,
 	lastDeletedBy?: DiscussionUser,
-	lastEditedBy: DiscussionUser,
+	lastEditedBy?: DiscussionUser,
 	tags: DiscussionTag[],
 	title: string,
 	trendingScore: number

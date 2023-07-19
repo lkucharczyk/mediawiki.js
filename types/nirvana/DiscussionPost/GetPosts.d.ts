@@ -30,9 +30,13 @@ export interface NirvanaDiscussionPostGetPostsResponse extends NirvanaResponse {
 		}[],
 		'doc:posts': DiscussionPost & {
 			_links: DiscussionPermalink,
+			createdBy: DiscussionUser,
+			creationDate: DiscussionDate,
 			creatorId: string,
 			forumId: string,
-			forumName: string,
+			forumName: string | null,
+			isDeleted: boolean,
+			isLocked: boolean,
 			isReply: boolean,
 			isReported: boolean,
 			jsonModel: string,
@@ -40,11 +44,12 @@ export interface NirvanaDiscussionPostGetPostsResponse extends NirvanaResponse {
 			latestRevisionId: string,
 			modificationDate: DiscussionDate|null,
 			position: number,
+			rawContent?: string,
 			// renderedContent: null
 			siteId: string,
 			threadCreatedBy: DiscussionUser,
 			threadId: string,
-			title: null,
+			title: string | null,
 			upvoteCount: 0,
 			_embedded: {
 				// contentImages: [],

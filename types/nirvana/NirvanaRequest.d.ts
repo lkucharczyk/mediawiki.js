@@ -3,6 +3,7 @@ import { NirvanaArticleComments } from './ArticleComments';
 import { NirvanaDiscussionForumGetForumsRequest, NirvanaDiscussionForumGetForumsResponse } from './DiscussionForum/GetForums';
 import { NirvanaDiscussionPostGetPostsRequest, NirvanaDiscussionPostGetPostsResponse } from './DiscussionPost/GetPosts';
 import { NirvanaDiscussionThread } from './DiscussionThread';
+import { NirvanaFeedsAndPosts } from './FeedsAndPosts';
 import { NirvanaMercuryApiGetWikiVariablesRequest, NirvanaMercuryApiGetWikiVariablesResponse } from './MercuryApiController/GetWikiVariables';
 import { NirvanaMessageWall } from './MessageWall';
 import { NirvanaUserApiGetDetailsRequest, NirvanaUserApiGetDetailsResponse } from './UsersApiController/GetDetails';
@@ -29,6 +30,7 @@ export interface KnownNirvanaRequests {
 		getPosts:            NirvanaDiscussionPostGetPostsRequest
 	},
 	DiscussionThread:        NirvanaDiscussionThread.Request,
+	FeedsAndPosts:           NirvanaFeedsAndPosts.Request,
 	MercuryApi: {
 		getWikiVariables:    NirvanaMercuryApiGetWikiVariablesRequest
 	},
@@ -59,6 +61,7 @@ export interface KnownNirvanaResponses<T extends NirvanaRequestBase> {
 		getPosts:            NirvanaDiscussionPostGetPostsResponse
 	},
 	DiscussionThread:        NirvanaDiscussionThread.Response,
+	FeedsAndPosts:           NirvanaFeedsAndPosts.Response<T>,
 	MercuryApi: {
 		getWikiVariables:    NirvanaMercuryApiGetWikiVariablesResponse
 	},
