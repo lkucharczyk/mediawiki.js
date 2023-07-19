@@ -39,7 +39,7 @@ interface FandomWiki extends FandomWikiComponents {
 	getUser: GetSubmodel<FandomUser, FandomUserComponents, 'name'>,
 	// fetchUsers: FetchSubmodels<( typeof FandomUser )['fetch']>;
 	fetchUsers<C extends 'groups'|never = never>( criteria?: ApiQueryListAllusers.Criteria, components?: C[] ): Promise<Loaded<FandomUser, 'id'|'name'|C>[]>
-};
+}
 
 @submodel<typeof FandomWiki, FandomUser, FandomUserComponents>( FandomUser, 'User' )
 class FandomWiki extends Wiki {
@@ -78,7 +78,11 @@ class FandomWiki extends Wiki {
 
 		params.format = 'json';
 		return this.call( 'wikia.php', this.processApiParams( params as unknown as Record<string, Exclude<NirvanaRequestBase[string], Record<string, unknown>>>, ',' ), options )
-			.then( async r => r.json() as Promise<T|NirvanaErrorResponse> )
+			.then( async r =>
+				r.status === 204
+					? {} as T // No content
+					: r.json() as Promise<T|NirvanaErrorResponse>
+			)
 			.then( r => {
 				if ( 'error' in r && r.error !== undefined ) {
 					throw new NirvanaError( r );
@@ -117,16 +121,16 @@ class FandomWiki extends Wiki {
 
 		super.clear();
 	}
-};
+}
 
 FandomWiki.prototype.callNirvana = FandomWiki.prototype.callNirvanaUnknown as FandomWiki['callNirvana'];
 
 interface FandomWikiSet {
 	load<T extends keyof FandomWikiComponents>( ...components: T[] ): Promise<this & { models: Loaded<FandomWiki, T>[] }>
-};
+}
 
 class FandomWikiSet extends UncompleteModelSet<FandomWiki> {
-};
+}
 
 // MercuryWikiVariables loader
 export const FandomWikiMWVLoader = {

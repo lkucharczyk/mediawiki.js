@@ -35,7 +35,7 @@ export interface NirvanaDiscussionPostGetPostsResponse extends NirvanaResponse {
 			creatorId: string,
 			forumId: string,
 			forumName: string | null,
-			id: string,
+			id: `${ bigint }`,
 			isDeleted: boolean,
 			isLocked: boolean,
 			isReply: boolean,
@@ -49,7 +49,7 @@ export interface NirvanaDiscussionPostGetPostsResponse extends NirvanaResponse {
 			// renderedContent: null
 			siteId: string,
 			threadCreatedBy: DiscussionUser,
-			threadId: string,
+			threadId: `${ bigint }`,
 			title: string | null,
 			upvoteCount: 0,
 			_embedded: {

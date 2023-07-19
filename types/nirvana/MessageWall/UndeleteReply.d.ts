@@ -5,6 +5,7 @@ export interface Request extends NirvanaRequestBase {
 	method: 'undeleteReply',
 	wallOwnerId: number,
 	postId: string,
+	token: string
 }
 
 // 204: No content; otherwise error
