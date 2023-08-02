@@ -1,5 +1,14 @@
 import { DiscussionAttachments, DiscussionDate, DiscussionPagination, DiscussionUser } from '../Discussions';
-import { NirvanaRequestBase } from '../NirvanaRequest';
+
+export interface CommentThread {
+	id: `${ bigint }`,
+	creationDate: DiscussionDate,
+	postId: `${ bigint }`,
+	followed: boolean,
+	containerId: `${ number }`,
+	firstPost: Comment,
+	posts: Comment[]
+}
 
 interface Comment {
 	id: `${ bigint }`,
@@ -17,10 +26,11 @@ interface Comment {
 	jsonModel: string,
 	attachments: DiscussionAttachments,
 	createdBy: DiscussionUser,
-	lastDeletedBy?: DiscussionUser
+	lastDeletedBy?: DiscussionUser,
+	lastEditedBy?: DiscussionUser
 }
 
-export interface Request extends NirvanaRequestBase {
+export interface Request {
 	controller: 'ArticleComments',
 	method: 'getComments',
 	title: string,
@@ -31,15 +41,7 @@ export interface Request extends NirvanaRequestBase {
 
 export interface Response {
 	links: DiscussionPagination,
-	threads: {
-		id: `${ bigint }`,
-		creationDate: DiscussionDate,
-		postId: `${ bigint }`,
-		followed: boolean,
-		containerId: `${ number }`,
-		firstPost: Comment,
-		posts: Comment[]
-	}[],
+	threads: CommentThread[],
 	totalCount: number,
 	readOnlyMode: boolean
 }

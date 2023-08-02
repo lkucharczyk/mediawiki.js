@@ -7,7 +7,7 @@ import { Loaded } from '../UncompleteModel';
 interface Fandom extends WikiNetwork {
 	getUser: FandomWiki['getUser'],
 	getUsers: FandomWiki['getUsers']
-};
+}
 
 class Fandom extends WikiNetwork {
 	public static readonly REGEXP_DOMAIN = /\.(?:fandom\.com|gamepedia\.com|\wikia\.(?:com|org))$/;
@@ -70,12 +70,12 @@ class Fandom extends WikiNetwork {
 		return this.getWikisById( [ id ] ).then( o => o[id] );
 	}
 
-	public async getWikisById<T extends number>( ids: readonly T[] ): Promise<{ [ id in T ]: Loaded<FandomWiki, 'id'>|null }> {
-		const items = ( await this.central.callNirvana( {
+	public async getWikisById<const T extends number>( ids: readonly T[] ): Promise<{ [ id in T ]: Loaded<FandomWiki, 'id'>|null }> {
+		const { items } = await this.central.callNirvana( {
 			controller: 'WikisApi',
 			method: 'getDetails',
 			ids
-		} ) ).items;
+		} );
 
 		return Object.fromEntries( ids.map( id => {
 			const item = items[id];
@@ -96,7 +96,7 @@ class Fandom extends WikiNetwork {
 			}
 		} ) ) as { [ id in T ]: Loaded<FandomWiki, 'id'>|null };
 	}
-};
+}
 
 export { Fandom };
 
@@ -104,4 +104,4 @@ export class WikiNotOnFandomError extends WikiNotOnNetworkError {
 	public constructor() {
 		super( 'Fandom' );
 	}
-};
+}

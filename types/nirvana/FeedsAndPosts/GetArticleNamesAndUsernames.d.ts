@@ -1,7 +1,6 @@
-import type { NirvanaRequestBase } from '../NirvanaRequest';
-import type { ExtractVal2 } from '../../util';
+import type { ExtractVal } from '../../util';
 
-export interface Request extends NirvanaRequestBase {
+export interface Request {
 	controller: 'FeedsAndPosts',
 	method: 'getArticleNamesAndUsernames',
 	stablePageIds?: number | readonly number[],
@@ -23,4 +22,4 @@ export interface Response<A extends number = number, U extends number = number> 
 	}
 }
 
-export type RequestResponse<R extends Request> = Response<ExtractVal2<number, R['stablePageIds']>, ExtractVal2<number, R['userIds']>>;
+export type RequestResponse<R extends Request> = Response<ExtractVal<number, R['stablePageIds']>, ExtractVal<number, R['userIds']>>;

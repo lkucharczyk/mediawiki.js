@@ -76,6 +76,7 @@
 		],
 		"require-await": "off",
 		"@typescript-eslint/require-await": "warn",
-		"@typescript-eslint/ban-types": "off"
+		"@typescript-eslint/ban-types": "off",
+		"@typescript-eslint/no-unsafe-declaration-merging": "off"
 	}
 }

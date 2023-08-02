@@ -9,8 +9,8 @@ import { Loaded, UncompleteModelLoaderT } from '../UncompleteModel';
 import {
 	ApiQueryListAllusers,
 	ApiQueryMetaSiteinfo,
-	KnownNirvanaRequests,
-	KnownNirvanaResponses,
+	KnownNirvanaRequest,
+	KnownNirvanaResponse,
 	NirvanaErrorResponse,
 	NirvanaRequestBase,
 	NirvanaResponse
@@ -27,11 +27,7 @@ type FandomWikiLoader<C extends keyof FandomWikiComponents, D extends keyof Fand
 
 interface FandomWiki extends FandomWikiComponents {
 	siteinfo?: ApiQueryMetaSiteinfo.PropGeneral & { gamepedia?: 'true'|'false' },
-	callNirvana<
-		const C extends keyof KnownNirvanaRequests,
-		const M extends ( C extends keyof KnownNirvanaRequests ? keyof KnownNirvanaRequests[C] : keyof KnownNirvanaRequests[keyof KnownNirvanaRequests] ),
-		const P extends NirvanaRequestBase & KnownNirvanaRequests[C][M]
-	>( params: { controller: C, method: M } & P, options?: RequestInit ): Promise<KnownNirvanaResponses<P>[C][M & keyof KnownNirvanaResponses<P>[C]]>,
+	callNirvana<R extends KnownNirvanaRequest & NirvanaRequestBase>( params: R, options?: RequestInit ): Promise<KnownNirvanaResponse<R>>,
 	load<T extends keyof FandomWikiComponents>( ...components: T[] ): Promise<Loaded<this, T>>,
 	load<T extends keyof FandomWikiComponents, D extends keyof FandomWikiComponents>( loader: FandomWikiLoader<T, D> ): Promise<Loaded<this, T|D>>,
 	setLoaded( components: keyof FandomWikiComponents|( keyof FandomWikiComponents )[] ): void,

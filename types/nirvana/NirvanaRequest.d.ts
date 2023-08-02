@@ -14,7 +14,7 @@ import { NirvanaWikisApiGetWikisUnderDomainRequest, NirvanaWikisApiGetWikisUnder
 export interface NirvanaRequestBase {
 	controller: string,
 	method: string,
-	[ key: string ]: string|number|readonly ( string|number )[]|Record<string, any>|undefined
+	[ key: string ]: string|number|boolean|readonly ( string|number )[]|Record<string, any>|undefined
 }
 
 // Object to allow external augementation
@@ -46,7 +46,7 @@ export interface KnownNirvanaRequests {
 }
 
 // Object to allow external augementation
-export interface KnownNirvanaResponses<T extends NirvanaRequestBase> {
+export interface KnownNirvanaResponses<T> {
 	ActivityApi: {
 		getSocialActivity:   NirvanaActivityApi.GetSocialActivity.Response
 	},
@@ -62,7 +62,7 @@ export interface KnownNirvanaResponses<T extends NirvanaRequestBase> {
 	MercuryApi: {
 		getWikiVariables:    NirvanaMercuryApiGetWikiVariablesResponse
 	},
-	MessageWall: NirvanaMessageWall.Response,
+	MessageWall:             NirvanaMessageWall.Response<T>,
 	UserApi: {
 		getDetails:          NirvanaUserApiGetDetailsResponse,
 		getUsersByName:      NirvanaUserApiGetUsersByNameResponse
@@ -72,3 +72,11 @@ export interface KnownNirvanaResponses<T extends NirvanaRequestBase> {
 		getWikisUnderDomain: NirvanaWikisApiGetWikisUnderDomainResponse
 	}
 }
+
+export type KnownNirvanaController = keyof KnownNirvanaRequests;
+export type KnownNirvanaRequest = {
+	[C in KnownNirvanaController]: {
+		[M in keyof KnownNirvanaRequests[C]]: KnownNirvanaRequests[C][M]
+	}[keyof KnownNirvanaRequests[C]]
+}[KnownNirvanaController];
+export type KnownNirvanaResponse<R extends KnownNirvanaRequest> = KnownNirvanaResponses<R>[R['controller']][R['method'] & keyof KnownNirvanaResponses<R>[R['controller']]];

@@ -71,11 +71,12 @@ export interface DiscussionForum {
 export interface DiscussionPost {
 	createdBy: DiscussionUser,
 	creationDate: DiscussionDate,
-	id: string,
+	id: `${ bigint }`,
 	isDeleted: boolean,
 	isEditable: boolean,
 	isLocked: boolean,
 	isReported?: boolean,
+	jsonModel: string,
 	rawContent: string,
 	upvoteCount: number
 }
