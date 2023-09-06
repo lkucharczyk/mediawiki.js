@@ -33,6 +33,7 @@ class Fandom extends WikiNetwork {
 		} catch {}
 
 		if ( url && Fandom.REGEXP_DOMAIN.test( url.hostname ) ) {
+			url.protocol = 'https';
 			let entrypoint = url.origin;
 
 			const path = url.pathname.split( '/' );
@@ -62,7 +63,7 @@ class Fandom extends WikiNetwork {
 			return new FandomWiki( this, Fandom.normalizeURL( wiki ), this.fetchManager, this.requestOptions );
 		} else {
 			wiki.url = Fandom.normalizeURL( wiki.url );
-			return new FandomWiki( this, wiki.url ).fromJSON( wiki );
+			return new FandomWiki( this, wiki.url, this.fetchManager, this.requestOptions ).fromJSON( wiki );
 		}
 	}
 

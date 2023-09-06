@@ -1,5 +1,6 @@
 import { NirvanaActivityApi } from './ActivityApi/GetSocialActivity';
 import { NirvanaArticleComments } from './ArticleComments';
+import { NirvanaDiscussionContribution } from './DiscussionContribution';
 import { NirvanaDiscussionForumGetForumsRequest, NirvanaDiscussionForumGetForumsResponse } from './DiscussionForum/GetForums';
 import { NirvanaDiscussionPostGetPostsRequest, NirvanaDiscussionPostGetPostsResponse } from './DiscussionPost/GetPosts';
 import { NirvanaDiscussionThread } from './DiscussionThread';
@@ -23,6 +24,7 @@ export interface KnownNirvanaRequests {
 		getSocialActivity:   NirvanaActivityApi.GetSocialActivity.Request
 	},
 	ArticleComments:         NirvanaArticleComments.Request,
+	DiscussionContribution:  NirvanaDiscussionContribution.Request,
 	DiscussionForum: {
 		getForums:           NirvanaDiscussionForumGetForumsRequest
 	},
@@ -51,6 +53,7 @@ export interface KnownNirvanaResponses<T> {
 		getSocialActivity:   NirvanaActivityApi.GetSocialActivity.Response
 	},
 	ArticleComments:         NirvanaArticleComments.Response,
+	DiscussionContribution:  NirvanaDiscussionContribution.Response,
 	DiscussionForum: {
 		getForums:           NirvanaDiscussionForumGetForumsResponse
 	},

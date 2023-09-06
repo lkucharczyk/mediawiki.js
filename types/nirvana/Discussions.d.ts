@@ -76,7 +76,7 @@ export interface DiscussionPost {
 	isEditable: boolean,
 	isLocked: boolean,
 	isReported?: boolean,
-	jsonModel: string,
+	jsonModel: string | null,
 	rawContent: string,
 	upvoteCount: number
 }
